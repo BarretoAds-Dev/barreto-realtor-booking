@@ -38,6 +38,17 @@ export const GET: APIRoute = async ({ url }) => {
 		// Type assertion para los slots
 		const typedSlots = (data || []) as AvailabilitySlot[];
 
+		// Log temporal para debugging (solo slots del 1 de diciembre)
+		if (typedSlots.some(s => s.date === '2025-12-01')) {
+			const dec1Slots = typedSlots.filter(s => s.date === '2025-12-01');
+			console.log('📅 Slots del 1 de diciembre:', dec1Slots.map(s => ({
+				time: s.start_time,
+				booked: s.booked,
+				capacity: s.capacity,
+				available: s.booked < s.capacity
+			})));
+		}
+
 		// Agrupar por fecha y formatear para el componente
 		const grouped = typedSlots.reduce(
 			(acc, slot) => {
@@ -54,11 +65,16 @@ export const GET: APIRoute = async ({ url }) => {
 						},
 					};
 				}
+				// Agregar TODOS los slots con su estado (disponibles, ocupados y deshabilitados)
+				const isAvailable = slot.booked < slot.capacity;
+				const isEnabled = slot.enabled ?? true; // Por defecto enabled si no está definido
+				
 				acc[dateKey].slots.push({
 					time: slot.start_time,
-					available: slot.booked < slot.capacity,
+					available: isAvailable && isEnabled,
 					capacity: slot.capacity,
 					booked: slot.booked,
+					enabled: isEnabled,
 				});
 				return acc;
 			},
@@ -72,6 +88,7 @@ export const GET: APIRoute = async ({ url }) => {
 						available: boolean;
 						capacity: number;
 						booked: number;
+						enabled?: boolean;
 					}>;
 					metadata: {
 						notes: string;
@@ -81,10 +98,8 @@ export const GET: APIRoute = async ({ url }) => {
 			>
 		);
 
-		// Filtrar solo días con slots disponibles
-		const result = Object.values(grouped).filter(
-			(day) => day.slots.some((slot) => slot.available)
-		);
+		// Incluir todos los días (aunque no tengan slots disponibles, para mostrar los ocupados)
+		const result = Object.values(grouped);
 
 		return new Response(JSON.stringify(result), {
 			headers: { 'Content-Type': 'application/json' },

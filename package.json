@@ -7,8 +7,7 @@
     "build": "astro build && pnpm run github",
     "preview": "astro preview",
     "astro": "astro",
-    "github": "git add . && git commit -m \"Deploy: $(date +'%Y-%m-%d %H:%M:%S')\" && git push origin HEAD",
-    "check:supabase": "node scripts/check-supabase.js"
+    "github": "git add . && git commit -m \"Deploy: $(date +'%Y-%m-%d %H:%M:%S')\" && git push origin HEAD"
   },
   "dependencies": {
     "@astrojs/preact": "^4.1.3",

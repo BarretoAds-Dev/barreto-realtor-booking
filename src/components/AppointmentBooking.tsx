@@ -34,11 +34,13 @@ interface Props {
 	config: Config;
 }
 
-export default function AppointmentBooking({ availableSlots, config }: Props) {
+export default function AppointmentBooking({ availableSlots: initialAvailableSlots, config }: Props) {
 	const [currentStep, setCurrentStep] = useState<Step>(1);
 	const [selectedDate, setSelectedDate] = useState<string | null>(null);
 	const [selectedTime, setSelectedTime] = useState<string | null>(null);
 	const [appointmentData, setAppointmentData] = useState<any>(null);
+	const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>(initialAvailableSlots);
+	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
 	// Encontrar slots para la fecha seleccionada
 	const slotsForSelectedDate = useMemo(() => {
@@ -55,11 +57,27 @@ export default function AppointmentBooking({ availableSlots, config }: Props) {
 		return `${year}-${month}-${day}`;
 	};
 
-	const handleDateSelect = (date: Date) => {
+	const handleDateSelect = async (date: Date) => {
 		const dateStr = formatDateLocal(date);
 		setSelectedDate(dateStr);
 		setSelectedTime(null);
 		setCurrentStep(2);
+		
+		// Refrescar disponibilidad cuando se selecciona una fecha
+		try {
+			const startDate = new Date().toISOString().split('T')[0];
+			const endDate = new Date();
+			endDate.setMonth(endDate.getMonth() + 6);
+			const endDateStr = endDate.toISOString().split('T')[0];
+			
+			const response = await fetch(`/api/availability?start=${startDate}&end=${endDateStr}`);
+			if (response.ok) {
+				const refreshedSlots = await response.json();
+				setAvailableSlots(refreshedSlots);
+			}
+		} catch (error) {
+			console.warn('Error al refrescar disponibilidad:', error);
+		}
 	};
 
 	const handleTimeSelect = (time: string) => {
@@ -67,15 +85,62 @@ export default function AppointmentBooking({ availableSlots, config }: Props) {
 		setCurrentStep(3);
 	};
 
-	const handleFormSubmit = (data: any) => {
+	const handleFormSubmit = async (data: any) => {
 		setAppointmentData(data);
-		setCurrentStep(4);
+		
+		// Refrescar disponibilidad inmediatamente después de crear la cita
+		// Esto asegura que el slot se marque como ocupado
+		try {
+			const startDate = new Date().toISOString().split('T')[0];
+			const endDate = new Date();
+			endDate.setMonth(endDate.getMonth() + 6);
+			const endDateStr = endDate.toISOString().split('T')[0];
+			
+			const response = await fetch(`/api/availability?start=${startDate}&end=${endDateStr}`);
+			if (response.ok) {
+				const refreshedSlots = await response.json();
+				setAvailableSlots(refreshedSlots);
+			}
+		} catch (error) {
+			console.warn('Error al refrescar disponibilidad después de crear cita:', error);
+		}
+		
+		// Mostrar mensaje de éxito y volver a la selección de horarios
+		// para que el usuario vea que el slot está en rojo
+		setSuccessMessage(`¡Cita creada exitosamente para ${data.date} a las ${data.time}!`);
+		setSelectedTime(null); // Limpiar la selección de hora
+		setCurrentStep(2); // Volver a la selección de horarios
+		
+		// Ocultar el mensaje después de 5 segundos y volver al inicio
+		setTimeout(() => {
+			setSuccessMessage(null);
+			// Volver al paso 1 (calendario) después de que desaparezca el mensaje
+			setCurrentStep(1);
+			setSelectedDate(null);
+			setSelectedTime(null);
+		}, 5000);
 	};
 
-	const handleBackToCalendar = () => {
+	const handleBackToCalendar = async () => {
 		setCurrentStep(1);
 		setSelectedDate(null);
 		setSelectedTime(null);
+		
+		// Refrescar disponibilidad cuando se vuelve al calendario
+		try {
+			const startDate = new Date().toISOString().split('T')[0];
+			const endDate = new Date();
+			endDate.setMonth(endDate.getMonth() + 6);
+			const endDateStr = endDate.toISOString().split('T')[0];
+			
+			const response = await fetch(`/api/availability?start=${startDate}&end=${endDateStr}`);
+			if (response.ok) {
+				const refreshedSlots = await response.json();
+				setAvailableSlots(refreshedSlots);
+			}
+		} catch (error) {
+			console.warn('Error al refrescar disponibilidad:', error);
+		}
 	};
 
 	const handleBackToTime = () => {
@@ -83,11 +148,27 @@ export default function AppointmentBooking({ availableSlots, config }: Props) {
 		setSelectedTime(null);
 	};
 
-	const handleNewAppointment = () => {
+	const handleNewAppointment = async () => {
 		setCurrentStep(1);
 		setSelectedDate(null);
 		setSelectedTime(null);
 		setAppointmentData(null);
+		
+		// Refrescar disponibilidad después de crear una cita
+		try {
+			const startDate = new Date().toISOString().split('T')[0];
+			const endDate = new Date();
+			endDate.setMonth(endDate.getMonth() + 6);
+			const endDateStr = endDate.toISOString().split('T')[0];
+			
+			const response = await fetch(`/api/availability?start=${startDate}&end=${endDateStr}`);
+			if (response.ok) {
+				const refreshedSlots = await response.json();
+				setAvailableSlots(refreshedSlots);
+			}
+		} catch (error) {
+			console.warn('Error al refrescar disponibilidad:', error);
+		}
 	};
 
 	// Función helper para crear Date desde string YYYY-MM-DD en hora local
@@ -112,13 +193,28 @@ export default function AppointmentBooking({ availableSlots, config }: Props) {
 					)}
 					
 					{currentStep === 2 && (
-						<TimeSlots
-							selectedDate={selectedDate ? parseDateLocal(selectedDate) : null}
-							selectedTime={selectedTime}
-							slots={slotsForSelectedDate}
-							onTimeSelect={handleTimeSelect}
-							onBack={handleBackToCalendar}
-						/>
+						<>
+							{successMessage && (
+								<div class="mb-6 bg-green-500/20 border-2 border-green-500/50 backdrop-blur-xl p-4 rounded animate-pulse">
+									<div class="flex items-center gap-3">
+										<svg class="w-6 h-6 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+										</svg>
+										<div class="flex-1">
+											<p class="text-green-200 text-sm font-semibold">{successMessage}</p>
+											<p class="text-green-300 text-xs mt-1">El horario seleccionado ahora aparece en rojo (ocupado).</p>
+										</div>
+									</div>
+								</div>
+							)}
+							<TimeSlots
+								selectedDate={selectedDate ? parseDateLocal(selectedDate) : null}
+								selectedTime={selectedTime}
+								slots={slotsForSelectedDate}
+								onTimeSelect={handleTimeSelect}
+								onBack={handleBackToCalendar}
+							/>
+						</>
 					)}
 					
 					{currentStep === 3 && (

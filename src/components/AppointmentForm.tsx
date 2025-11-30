@@ -14,6 +14,7 @@ interface AppointmentFormProps {
 export default function AppointmentForm({ selectedDate, selectedTime, onBack, onSubmit }: AppointmentFormProps) {
 	const [operationType, setOperationType] = useState<'rentar' | 'comprar' | ''>('');
 	const [resourceType, setResourceType] = useState('');
+	const [creditoPreaprobado, setCreditoPreaprobado] = useState<string>('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [errors, setErrors] = useState<Record<string, string>>({});
 	const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -77,11 +78,30 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 		setTouched(prev => ({ ...prev, [fieldName]: true }));
 		const form = document.getElementById('appointmentForm') as HTMLFormElement;
 		if (form) {
-			const field = form.querySelector(`[name="${fieldName}"]`) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-			if (field) {
-				validateField(fieldName, field.value);
+			// Para radio buttons, buscar el seleccionado
+			const radioButtons = form.querySelectorAll(`[name="${fieldName}"]`) as NodeListOf<HTMLInputElement>;
+			let value = '';
+			if (radioButtons.length > 0) {
+				// Es un radio button
+				const selected = Array.from(radioButtons).find(radio => radio.checked);
+				value = selected?.value || '';
+			} else {
+				// Es otro tipo de campo
+				const field = form.querySelector(`[name="${fieldName}"]`) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+				value = field?.value || '';
+			}
+			if (value) {
+				validateField(fieldName, value);
 			}
 		}
+	};
+
+	const handleRadioChange = (fieldName: string, value: string) => {
+		setTouched(prev => ({ ...prev, [fieldName]: true }));
+		if (fieldName === 'creditoPreaprobado') {
+			setCreditoPreaprobado(value);
+		}
+		validateField(fieldName, value);
 	};
 
 	const handleSubmit = async (e: Event) => {
@@ -576,39 +596,59 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 									</label>
 									<div class={`grid grid-cols-2 gap-3 ${touched.creditoPreaprobado && errors.creditoPreaprobado ? 'mb-2' : ''}`}>
 										<label class={`group relative flex items-center p-4 border-2 cursor-pointer bg-slate-700/40 backdrop-blur-xl hover:bg-slate-700/60 transition-all shadow-md shadow-black/20 hover:shadow-md hover:shadow-black/25 ${
-											touched.creditoPreaprobado && errors.creditoPreaprobado ? 'border-red-500/50' : 'border-slate-600/50'
+											creditoPreaprobado === 'si' ? 'border-[#00a0df]/60 bg-[#003d82]/15' : touched.creditoPreaprobado && errors.creditoPreaprobado ? 'border-red-500/50' : 'border-slate-600/50'
 										}`}>
 											<input
 												type="radio"
 												name="creditoPreaprobado"
 												value="si"
+												checked={creditoPreaprobado === 'si'}
 												required
-												onChange={() => handleBlur('creditoPreaprobado')}
+												onChange={(e) => {
+													const target = e.target as HTMLInputElement;
+													handleRadioChange('creditoPreaprobado', target.value);
+												}}
 												class="sr-only peer"
 											/>
 											<div class="flex items-center gap-3 w-full">
-												<div class="w-5 h-5 rounded-full border-2 border-slate-500/50 peer-checked:border-[#00a0df] peer-checked:bg-[#00a0df] backdrop-blur-sm flex items-center justify-center transition-all shadow-sm peer-checked:shadow-[#00a0df]/15">
-													<div class="w-2 h-2 rounded-full bg-slate-700 peer-checked:bg-white transition-all"></div>
+												<div class={`w-5 h-5 rounded-full border-2 backdrop-blur-sm flex items-center justify-center transition-all shadow-sm ${
+													creditoPreaprobado === 'si' ? 'border-[#00a0df] bg-[#00a0df] shadow-[#00a0df]/15' : 'border-slate-500/50'
+												}`}>
+													<div class={`w-2 h-2 rounded-full transition-all ${
+														creditoPreaprobado === 'si' ? 'bg-white' : 'bg-slate-700'
+													}`}></div>
 												</div>
-												<span class="text-white font-semibold peer-checked:text-[#00a0df] transition-colors uppercase tracking-wide text-xs">Sí</span>
+												<span class={`text-white font-semibold transition-colors uppercase tracking-wide text-xs ${
+													creditoPreaprobado === 'si' ? 'text-[#00a0df]' : ''
+												}`}>Sí</span>
 											</div>
 										</label>
 										<label class={`group relative flex items-center p-4 border-2 cursor-pointer bg-slate-700/40 backdrop-blur-xl hover:bg-slate-700/60 transition-all shadow-md shadow-black/20 hover:shadow-md hover:shadow-black/25 ${
-											touched.creditoPreaprobado && errors.creditoPreaprobado ? 'border-red-500/50' : 'border-slate-600/50'
+											creditoPreaprobado === 'no' ? 'border-[#00a0df]/60 bg-[#003d82]/15' : touched.creditoPreaprobado && errors.creditoPreaprobado ? 'border-red-500/50' : 'border-slate-600/50'
 										}`}>
 											<input
 												type="radio"
 												name="creditoPreaprobado"
 												value="no"
+												checked={creditoPreaprobado === 'no'}
 												required
-												onChange={() => handleBlur('creditoPreaprobado')}
+												onChange={(e) => {
+													const target = e.target as HTMLInputElement;
+													handleRadioChange('creditoPreaprobado', target.value);
+												}}
 												class="sr-only peer"
 											/>
 											<div class="flex items-center gap-3 w-full">
-												<div class="w-5 h-5 rounded-full border-2 border-slate-500/50 peer-checked:border-[#00a0df] peer-checked:bg-[#00a0df] backdrop-blur-sm flex items-center justify-center transition-all shadow-sm peer-checked:shadow-[#00a0df]/15">
-													<div class="w-2 h-2 rounded-full bg-slate-700 peer-checked:bg-white transition-all"></div>
+												<div class={`w-5 h-5 rounded-full border-2 backdrop-blur-sm flex items-center justify-center transition-all shadow-sm ${
+													creditoPreaprobado === 'no' ? 'border-[#00a0df] bg-[#00a0df] shadow-[#00a0df]/15' : 'border-slate-500/50'
+												}`}>
+													<div class={`w-2 h-2 rounded-full transition-all ${
+														creditoPreaprobado === 'no' ? 'bg-white' : 'bg-slate-700'
+													}`}></div>
 												</div>
-												<span class="text-white font-semibold peer-checked:text-[#00a0df] transition-colors uppercase tracking-wide text-xs">No</span>
+												<span class={`text-white font-semibold transition-colors uppercase tracking-wide text-xs ${
+													creditoPreaprobado === 'no' ? 'text-[#00a0df]' : ''
+												}`}>No</span>
 											</div>
 										</label>
 									</div>

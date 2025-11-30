@@ -132,8 +132,37 @@ export const POST: APIRoute = async ({ request }) => {
 
 		const slot = matchingSlots[0];
 
-		// Verificar disponibilidad
+		// Verificar disponibilidad - doble verificación para prevenir condiciones de carrera
+		// Primero verificar el contador cached
 		if (slot.booked >= slot.capacity) {
+			console.warn('⚠️ Slot marcado como completo según contador:', {
+				slotId: slot.id,
+				booked: slot.booked,
+				capacity: slot.capacity
+			});
+			return new Response(
+				JSON.stringify({
+					error: 'Slot completo. Por favor selecciona otro horario.',
+				}),
+				{ status: 409 }
+			);
+		}
+
+		// Verificación adicional: contar citas activas reales para prevenir condiciones de carrera
+		const { data: activeAppointments, error: countError } = await supabase
+			.from('appointments')
+			.select('id')
+			.eq('slot_id', slot.id)
+			.in('status', ['pending', 'confirmed']);
+
+		const actualBookedCount = activeAppointments?.length || 0;
+		
+		if (actualBookedCount >= slot.capacity) {
+			console.warn('⚠️ Slot completo según conteo real de citas:', {
+				slotId: slot.id,
+				actualBookedCount,
+				capacity: slot.capacity
+			});
 			return new Response(
 				JSON.stringify({
 					error: 'Slot completo. Por favor selecciona otro horario.',
@@ -218,6 +247,54 @@ export const POST: APIRoute = async ({ request }) => {
 		const typedAppointment = appointment as import('../../lib/supabase').Appointment;
 
 		console.log('✅ Cita creada exitosamente:', typedAppointment.id);
+
+		// Fallback: Actualizar manualmente el contador si el trigger no funcionó
+		// Esto asegura que el slot se marque como ocupado inmediatamente
+		try {
+			const { data: activeAppointments } = await supabase
+				.from('appointments')
+				.select('id')
+				.eq('slot_id', slot.id)
+				.in('status', ['pending', 'confirmed']);
+
+			const newBookedCount = Math.min(
+				slot.capacity,
+				activeAppointments?.length || 0
+			);
+
+			// Actualizar el contador directamente
+			console.log('🔄 Intentando actualizar contador:', {
+				slotId: slot.id,
+				currentBooked: slot.booked,
+				newBookedCount,
+				activeAppointmentsCount: activeAppointments?.length || 0
+			});
+
+			const { error: updateError, data: updateData } = await supabase
+				.from('availability_slots')
+				.update({ booked: newBookedCount })
+				.eq('id', slot.id)
+				.select();
+
+			if (updateError) {
+				console.error('❌ Error al actualizar contador:', {
+					error: updateError.message,
+					details: updateError.details,
+					hint: updateError.hint,
+					code: updateError.code
+				});
+			} else {
+				console.log('✅ Contador actualizado manualmente (fallback):', {
+					slotId: slot.id,
+					oldBooked: slot.booked,
+					newBooked: newBookedCount,
+					updatedSlot: updateData
+				});
+			}
+		} catch (fallbackError) {
+			console.warn('⚠️ Error en fallback de actualización de contador:', fallbackError);
+			// No fallar la creación de la cita si solo falla la actualización del contador
+		}
 
 		// TODO: Enviar emails de confirmación (Fase 2)
 		// await sendConfirmationEmails(typedAppointment);

@@ -46,7 +46,16 @@ export default function Calendar({ availableSlots, onDateSelect, selectedDate }:
 
 	const isDateAvailable = (date: Date): boolean => {
 		const dateStr = formatDateLocal(date);
+		// Permitir seleccionar cualquier fecha que tenga slots (disponibles o ocupados)
 		return availableDates.has(dateStr);
+	};
+	
+	const hasAvailableSlots = (date: Date): boolean => {
+		const dateStr = formatDateLocal(date);
+		const daySlots = availableSlots.find(slot => slot.date === dateStr);
+		if (!daySlots) return false;
+		// Verificar si tiene al menos un slot disponible
+		return daySlots.slots.some(slot => slot.available && slot.booked < slot.capacity);
 	};
 
 	const isToday = (date: Date): boolean => {
@@ -143,6 +152,7 @@ export default function Calendar({ availableSlots, onDateSelect, selectedDate }:
 					const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
 					const isPast = isDatePast(date);
 					const isAvailable = isDateAvailable(date);
+					const hasAvailable = hasAvailableSlots(date);
 					const isSelected = isDateSelected(date);
 					const isTodayDate = isToday(date);
 
@@ -157,10 +167,12 @@ export default function Calendar({ availableSlots, onDateSelect, selectedDate }:
 							}}
 							disabled={isPast || !isAvailable}
 							class={`
-								py-3 px-2 text-sm font-bold transition-all duration-200 backdrop-blur-sm
+								py-3 px-2 text-sm font-bold transition-all duration-200 backdrop-blur-sm relative
 								${isPast || !isAvailable
 									? 'text-slate-600 cursor-not-allowed bg-slate-800/20 backdrop-blur-sm border-2 border-slate-700/20' 
-									: 'text-white hover:bg-slate-700/50 backdrop-blur-xl hover:text-[#00a0df] hover:scale-105 active:scale-95 border-2 border-transparent hover:border-[#00a0df]/30 shadow-sm shadow-black/10 hover:shadow-md hover:shadow-black/15'
+									: hasAvailable
+									? 'text-white hover:bg-slate-700/50 backdrop-blur-xl hover:text-[#00a0df] hover:scale-105 active:scale-95 border-2 border-transparent hover:border-green-400/30 shadow-sm shadow-black/10 hover:shadow-md hover:shadow-black/15'
+									: 'text-white hover:bg-slate-700/50 backdrop-blur-xl hover:text-red-400 hover:scale-105 active:scale-95 border-2 border-transparent hover:border-red-400/30 shadow-sm shadow-black/10 hover:shadow-md hover:shadow-black/15 bg-red-500/10'
 								}
 								${isSelected 
 									? 'bg-[#003d82] backdrop-blur-xl text-white shadow-md shadow-black/20 scale-105 border-2 border-[#00a0df]/60' 
