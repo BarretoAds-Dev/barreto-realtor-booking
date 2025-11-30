@@ -1,0 +1,67 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AppointmentsDashboard from '../components/AppointmentsDashboard';
+import { getEntry } from 'astro:content';
+
+// 📊 Cargar citas agendadas
+let appointmentsData: { data: any[] } = { data: [] };
+
+try {
+	const appointmentsEntry = await getEntry('appointments', 'booked');
+	appointmentsData = appointmentsEntry as { data: any[] };
+} catch (error) {
+	console.error('Error loading appointments:', error);
+}
+
+// Ordenar citas por fecha y hora (más recientes primero)
+const sortedAppointments = [...(appointmentsData?.data || [])].sort((a, b) => {
+	const dateA = new Date(`${a.date}T${a.time}`);
+	const dateB = new Date(`${b.date}T${b.time}`);
+	return dateB.getTime() - dateA.getTime();
+});
+---
+
+<Layout>
+	<div class="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+		<!-- Elementos decorativos de fondo -->
+		<div class="absolute inset-0 overflow-hidden pointer-events-none">
+			<div class="absolute -top-40 -right-40 w-96 h-96 bg-[#003d82]/8 rounded-full blur-3xl"></div>
+			<div class="absolute -bottom-40 -left-40 w-96 h-96 bg-[#00a0df]/6 rounded-full blur-3xl"></div>
+		</div>
+		
+		<div class="max-w-7xl mx-auto relative z-10">
+			<!-- Header -->
+			<div class="text-center mb-10">
+				<div class="inline-flex items-center justify-center w-16 h-16 bg-[#003d82] backdrop-blur-xl mb-4 shadow-md shadow-black/20 border-2 border-[#00a0df]/20">
+					<svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+					</svg>
+				</div>
+				<h1 class="text-4xl sm:text-5xl font-bold text-white mb-3 tracking-tight">Dashboard de Citas</h1>
+				<p class="text-lg text-gray-200 max-w-2xl mx-auto font-light">
+					Gestiona y visualiza todas las citas agendadas
+				</p>
+			</div>
+
+			<!-- Link de regreso -->
+			<div class="mb-6">
+				<a 
+					href="/" 
+					class="inline-flex items-center text-sm text-gray-300 hover:text-[#00a0df] transition-colors font-semibold uppercase tracking-wide"
+				>
+					<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+					</svg>
+					Volver a reservar cita
+				</a>
+			</div>
+
+			<!-- Dashboard Island -->
+			<AppointmentsDashboard 
+				appointments={sortedAppointments}
+				client:load
+			/>
+		</div>
+	</div>
+</Layout>
+
