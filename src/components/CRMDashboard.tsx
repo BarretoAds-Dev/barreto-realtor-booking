@@ -1,5 +1,5 @@
 /** @jsxImportSource preact */
-import { useState } from 'preact/hooks';
+import { useState, useCallback } from 'preact/hooks';
 import PropertiesSection from './PropertiesSection';
 import AppointmentsSection from './AppointmentsSection';
 import ClientsSection from './ClientsSection';
@@ -41,10 +41,10 @@ type Tab = 'overview' | 'properties' | 'appointments' | 'clients';
 export default function CRMDashboard({ appointments, properties, clients }: CRMDashboardProps) {
 	const [activeTab, setActiveTab] = useState<Tab>('overview');
 
-	const handleTabChange = (tabId: Tab) => {
+	const handleTabChange = useCallback((tabId: Tab) => {
 		console.log('Changing tab to:', tabId);
 		setActiveTab(tabId);
-	};
+	}, []);
 
 	// Calcular estadísticas generales
 	const stats = {
@@ -94,6 +94,9 @@ export default function CRMDashboard({ appointments, properties, clients }: CRMD
 					))}
 				</div>
 			</div>
+
+			{/* Debug: Tab activo */}
+			{/* <div class="text-white text-xs mb-2">Tab activo: {activeTab}</div> */}
 
 			{/* Content */}
 			{activeTab === 'overview' && (
