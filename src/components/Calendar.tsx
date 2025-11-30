@@ -72,48 +72,50 @@ export default function Calendar({ availableSlots, onDateSelect, selectedDate }:
 	const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
 	return (
-		<div className="max-w-md mx-auto transition-all duration-500">
-			<div className="text-center mb-6">
-				<h2 className="text-2xl font-bold text-white mb-2 tracking-tight">Selecciona una fecha</h2>
-				<p className="text-gray-300 text-sm font-light">Elige el día que mejor te convenga</p>
+		<div class="max-w-md mx-auto transition-all duration-500">
+			<div class="text-center mb-6">
+				<h2 class="text-2xl font-bold text-white mb-2 tracking-tight">Selecciona una fecha</h2>
+				<p class="text-gray-300 text-sm font-light">Elige el día que mejor te convenga</p>
 			</div>
 			
 			{/* Navegación del mes */}
-			<div className="flex items-center justify-between mb-6 bg-slate-700/40 backdrop-blur-xl p-3 border-2 border-slate-600/40 shadow-md shadow-black/20">
+			<div class="flex items-center justify-between mb-6 bg-slate-700/40 backdrop-blur-xl p-3 border-2 border-slate-600/40 shadow-md shadow-black/20">
 				<button
+					type="button"
 					onClick={prevMonth}
-					className="p-2 hover:bg-[#003d82]/30 backdrop-blur-sm transition-all duration-200 active:scale-95 border-2 border-transparent hover:border-[#00a0df]/30"
+					class="p-2 hover:bg-[#003d82]/30 backdrop-blur-sm transition-all duration-200 active:scale-95 border-2 border-transparent hover:border-[#00a0df]/30"
 					aria-label="Mes anterior"
 				>
-					<svg className="w-6 h-6 text-gray-300 hover:text-[#00a0df] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+					<svg class="w-6 h-6 text-gray-300 hover:text-[#00a0df] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
 					</svg>
 				</button>
-				<h3 className="text-lg font-bold text-white">
+				<h3 class="text-lg font-bold text-white">
 					{months[currentDate.getMonth()]} {currentDate.getFullYear()}
 				</h3>
 				<button
+					type="button"
 					onClick={nextMonth}
-					className="p-2 hover:bg-[#003d82]/30 backdrop-blur-sm transition-all duration-200 active:scale-95 border-2 border-transparent hover:border-[#00a0df]/30"
+					class="p-2 hover:bg-[#003d82]/30 backdrop-blur-sm transition-all duration-200 active:scale-95 border-2 border-transparent hover:border-[#00a0df]/30"
 					aria-label="Mes siguiente"
 				>
-					<svg className="w-6 h-6 text-gray-300 hover:text-[#00a0df] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+					<svg class="w-6 h-6 text-gray-300 hover:text-[#00a0df] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
 					</svg>
 				</button>
 			</div>
 
 			{/* Días de la semana */}
-			<div className="grid grid-cols-7 gap-2 mb-3">
+			<div class="grid grid-cols-7 gap-2 mb-3">
 				{['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day) => (
-					<div key={day} className="text-center text-xs font-semibold text-gray-400 py-2">
+					<div key={day} class="text-center text-xs font-semibold text-gray-400 py-2">
 						{day}
 					</div>
 				))}
 			</div>
 
 			{/* Calendario */}
-			<div className="grid grid-cols-7 gap-2">
+			<div class="grid grid-cols-7 gap-2">
 				{emptyDays.map((_, i) => (
 					<div key={`empty-${i}`}></div>
 				))}
@@ -127,9 +129,14 @@ export default function Calendar({ availableSlots, onDateSelect, selectedDate }:
 					return (
 						<button
 							key={day}
-							onClick={() => !isPast && isAvailable && onDateSelect(date)}
+							type="button"
+							onClick={() => {
+								if (!isPast && isAvailable) {
+									onDateSelect(date);
+								}
+							}}
 							disabled={isPast || !isAvailable}
-							className={`
+							class={`
 								py-3 px-2 text-sm font-bold transition-all duration-200 backdrop-blur-sm
 								${isPast || !isAvailable
 									? 'text-slate-600 cursor-not-allowed bg-slate-800/20 backdrop-blur-sm border-2 border-slate-700/20' 
