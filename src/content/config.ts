@@ -77,24 +77,6 @@ const holidaySchema = z.object({
 	recurring: z.boolean().default(false)
 });
 
-// 🏠 Schema para propiedades
-const propertySchema = z.object({
-	id: z.string(),
-	title: z.string(),
-	type: z.enum(['casa', 'departamento', 'oficina', 'terreno', 'local']),
-	operation: z.enum(['venta', 'renta']),
-	price: z.number().positive(),
-	address: z.string(),
-	bedrooms: z.number().int().min(0),
-	bathrooms: z.number().int().min(0),
-	area: z.number().positive(),
-	status: z.enum(['disponible', 'reservado', 'vendido', 'rentado']),
-	description: z.string(),
-	images: z.array(z.string()).default([]),
-	features: z.array(z.string()).default([]),
-	createdAt: z.string().datetime()
-});
-
 // 🔧 Definir las collections
 export const collections = {
 	availability: defineCollection({
@@ -115,11 +97,6 @@ export const collections = {
 	holidays: defineCollection({
 		type: 'data',
 		schema: z.array(holidaySchema)
-	}),
-
-	properties: defineCollection({
-		type: 'data',
-		schema: z.array(propertySchema)
 	})
 };
 
