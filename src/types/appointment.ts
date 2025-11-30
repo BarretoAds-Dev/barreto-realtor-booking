@@ -1,4 +1,4 @@
-export interface Appointment {
+export type Appointment = {
 	id: string;
 	date: string;
 	time: string;
@@ -11,5 +11,5 @@ export interface Appointment {
 	};
 	status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
 	createdAt: string;
-}
+};
 
