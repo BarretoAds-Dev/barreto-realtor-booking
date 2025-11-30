@@ -1,6 +1,8 @@
 /** @jsxImportSource preact */
 import { useState } from 'preact/hooks';
-import { validateAppointment, type AppointmentFormData } from '../schemas/appointmentSchema';
+import { validateAppointmentClient } from '../utils/clientValidation';
+
+type AppointmentFormData = any;
 
 interface AppointmentFormProps {
 	selectedDate: Date | null;
@@ -50,7 +52,7 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 			}
 		}
 
-		const result = validateAppointment(data);
+		const result = validateAppointmentClient(data);
 		if (!result.success && result.errors) {
 			setErrors(prev => ({ ...prev, [name]: result.errors![name] || '' }));
 		} else {
@@ -110,8 +112,8 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 			}
 		}
 
-		// Validar con Zod
-		const validation = validateAppointment(appointmentData);
+		// Validar datos
+		const validation = validateAppointmentClient(appointmentData);
 		
 		if (!validation.success) {
 			setErrors(validation.errors || {});
@@ -149,40 +151,40 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 	});
 
 	return (
-		<div className="max-w-xl mx-auto transition-all duration-500">
-			<div className="text-center mb-6">
+		<div class="max-w-xl mx-auto transition-all duration-500">
+			<div class="text-center mb-6">
 				<button
 					onClick={onBack}
-					className="inline-flex items-center text-sm text-gray-300 hover:text-[#00a0df] mb-4 transition-colors font-semibold uppercase tracking-wide"
+					class="inline-flex items-center text-sm text-gray-300 hover:text-[#00a0df] mb-4 transition-colors font-semibold uppercase tracking-wide"
 				>
-					<svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
 					</svg>
 					Cambiar hora
 				</button>
-				<h2 className="text-2xl font-bold text-white mb-2 tracking-tight">Información de contacto</h2>
-				<p className="text-gray-300 text-sm font-light">Completa tus datos para confirmar la cita</p>
+				<h2 class="text-2xl font-bold text-white mb-2 tracking-tight">Información de contacto</h2>
+				<p class="text-gray-300 text-sm font-light">Completa tus datos para confirmar la cita</p>
 			</div>
 
 			{/* Resumen de selección */}
-			<div className="bg-gradient-to-r from-[#003d82]/30 to-[#004C97]/30 backdrop-blur-xl p-4 mb-6 border-2 border-[#00a0df]/30 shadow-md shadow-black/15">
-				<div className="flex items-center justify-between">
+			<div class="bg-gradient-to-r from-[#003d82]/30 to-[#004C97]/30 backdrop-blur-xl p-4 mb-6 border-2 border-[#00a0df]/30 shadow-md shadow-black/15">
+				<div class="flex items-center justify-between">
 					<div>
-						<p className="text-xs text-gray-400 mb-1">Fecha seleccionada</p>
-						<p className="text-sm font-semibold text-white">{dateStr.charAt(0).toUpperCase() + dateStr.slice(1)}</p>
+						<p class="text-xs text-gray-400 mb-1">Fecha seleccionada</p>
+						<p class="text-sm font-semibold text-white">{dateStr.charAt(0).toUpperCase() + dateStr.slice(1)}</p>
 					</div>
-					<div className="text-right">
-						<p className="text-xs text-gray-400 mb-1">Hora seleccionada</p>
-						<p className="text-sm font-bold text-[#00a0df]">{selectedTime}</p>
+					<div class="text-right">
+						<p class="text-xs text-gray-400 mb-1">Hora seleccionada</p>
+						<p class="text-sm font-bold text-[#00a0df]">{selectedTime}</p>
 					</div>
 				</div>
 			</div>
 
-			<form id="appointmentForm" onSubmit={handleSubmit} className="space-y-5">
+			<form id="appointmentForm" onSubmit={handleSubmit} class="space-y-5">
 				{Object.keys(errors).length > 0 && (
-					<div className="bg-red-500/20 border-2 border-red-500/50 backdrop-blur-xl p-4 mb-4">
-						<p className="text-red-300 text-sm font-semibold mb-2">Por favor corrige los siguientes errores:</p>
-						<ul className="list-disc list-inside text-red-200 text-xs space-y-1">
+					<div class="bg-red-500/20 border-2 border-red-500/50 backdrop-blur-xl p-4 mb-4">
+						<p class="text-red-300 text-sm font-semibold mb-2">Por favor corrige los siguientes errores:</p>
+						<ul class="list-disc list-inside text-red-200 text-xs space-y-1">
 							{Object.entries(errors).map(([field, error]) => (
 								<li key={field}>{error}</li>
 							))}
@@ -190,8 +192,8 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 					</div>
 				)}
 				<div>
-					<label htmlFor="name" className="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
-						Nombre completo <span className="text-red-400">*</span>
+					<label htmlFor="name" class="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
+						Nombre completo <span class="text-red-400">*</span>
 					</label>
 					<input
 						type="text"
@@ -199,7 +201,7 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 						name="name"
 						required
 						onBlur={() => handleBlur('name')}
-						className={`w-full px-4 py-3 border-2 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white placeholder-gray-400 shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light ${
+						class={`w-full px-4 py-3 border-2 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white placeholder-gray-400 shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light ${
 							touched.name && errors.name
 								? 'border-red-500/70 focus:ring-2 focus:ring-red-500/30 focus:border-red-500'
 								: 'border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70'
@@ -207,13 +209,13 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 						placeholder="Ej: Juan Pérez"
 					/>
 					{touched.name && errors.name && (
-						<p className="mt-1 text-sm text-red-400">{errors.name}</p>
+						<p class="mt-1 text-sm text-red-400">{errors.name}</p>
 					)}
 				</div>
 
 				<div>
-					<label htmlFor="email" className="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
-						Correo electrónico <span className="text-red-400">*</span>
+					<label htmlFor="email" class="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
+						Correo electrónico <span class="text-red-400">*</span>
 					</label>
 					<input
 						type="email"
@@ -221,7 +223,7 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 						name="email"
 						required
 						onBlur={() => handleBlur('email')}
-						className={`w-full px-4 py-3 border-2 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white placeholder-gray-400 shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light ${
+						class={`w-full px-4 py-3 border-2 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white placeholder-gray-400 shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light ${
 							touched.email && errors.email
 								? 'border-red-500/70 focus:ring-2 focus:ring-red-500/30 focus:border-red-500'
 								: 'border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70'
@@ -229,20 +231,20 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 						placeholder="Ej: juan@ejemplo.com"
 					/>
 					{touched.email && errors.email && (
-						<p className="mt-1 text-sm text-red-400">{errors.email}</p>
+						<p class="mt-1 text-sm text-red-400">{errors.email}</p>
 					)}
 				</div>
 
 				<div>
-					<label htmlFor="phone" className="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
-						Teléfono <span className="text-gray-400 text-xs font-normal normal-case">(opcional)</span>
+					<label htmlFor="phone" class="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
+						Teléfono <span class="text-gray-400 text-xs font-normal normal-case">(opcional)</span>
 					</label>
 					<input
 						type="tel"
 						id="phone"
 						name="phone"
 						onBlur={() => handleBlur('phone')}
-						className={`w-full px-4 py-3 border-2 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white placeholder-gray-400 shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light ${
+						class={`w-full px-4 py-3 border-2 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white placeholder-gray-400 shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light ${
 							touched.phone && errors.phone
 								? 'border-red-500/70 focus:ring-2 focus:ring-red-500/30 focus:border-red-500'
 								: 'border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70'
@@ -250,17 +252,17 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 						placeholder="Ej: +34 600 000 000"
 					/>
 					{touched.phone && errors.phone && (
-						<p className="mt-1 text-sm text-red-400">{errors.phone}</p>
+						<p class="mt-1 text-sm text-red-400">{errors.phone}</p>
 					)}
 				</div>
 
 				{/* Campo de selección: Rentar o Comprar */}
 				<div>
-					<label className="block text-sm font-bold text-white mb-3 uppercase tracking-wide">
-						Tipo de operación <span className="text-red-400">*</span>
+					<label class="block text-sm font-bold text-white mb-3 uppercase tracking-wide">
+						Tipo de operación <span class="text-red-400">*</span>
 					</label>
-					<div className="grid grid-cols-2 gap-3">
-						<label className={`group relative flex items-center p-4 border-2 cursor-pointer bg-slate-700/40 backdrop-blur-xl hover:bg-slate-700/60 transition-all shadow-md shadow-black/20 hover:shadow-md hover:shadow-black/25 ${
+					<div class="grid grid-cols-2 gap-3">
+						<label class={`group relative flex items-center p-4 border-2 cursor-pointer bg-slate-700/40 backdrop-blur-xl hover:bg-slate-700/60 transition-all shadow-md shadow-black/20 hover:shadow-md hover:shadow-black/25 ${
 							operationType === 'rentar' ? 'border-[#00a0df]/60 bg-[#003d82]/15' : 'border-slate-600/50 hover:border-[#00a0df]/40'
 						}`}>
 							<input
@@ -273,22 +275,22 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 									if (target) setOperationType(target.value as 'rentar');
 								}}
 								required
-								className="sr-only peer"
+								class="sr-only peer"
 							/>
-							<div className="flex items-center gap-3 w-full">
-								<div className={`w-5 h-5 rounded-full border-2 backdrop-blur-sm flex items-center justify-center transition-all shadow-sm ${
+							<div class="flex items-center gap-3 w-full">
+								<div class={`w-5 h-5 rounded-full border-2 backdrop-blur-sm flex items-center justify-center transition-all shadow-sm ${
 									operationType === 'rentar' ? 'border-[#00a0df] bg-[#00a0df] shadow-[#00a0df]/15' : 'border-slate-500/50'
 								}`}>
-									<div className={`w-2 h-2 rounded-full transition-all ${
+									<div class={`w-2 h-2 rounded-full transition-all ${
 										operationType === 'rentar' ? 'bg-white' : 'bg-slate-700'
 									}`}></div>
 								</div>
-								<span className={`text-white font-semibold transition-colors uppercase tracking-wide text-xs ${
+								<span class={`text-white font-semibold transition-colors uppercase tracking-wide text-xs ${
 									operationType === 'rentar' ? 'text-[#00a0df]' : ''
 								}`}>Rentar</span>
 							</div>
 						</label>
-						<label className={`group relative flex items-center p-4 border-2 cursor-pointer bg-slate-700/40 backdrop-blur-xl hover:bg-slate-700/60 transition-all shadow-md shadow-black/20 hover:shadow-md hover:shadow-black/25 ${
+						<label class={`group relative flex items-center p-4 border-2 cursor-pointer bg-slate-700/40 backdrop-blur-xl hover:bg-slate-700/60 transition-all shadow-md shadow-black/20 hover:shadow-md hover:shadow-black/25 ${
 							operationType === 'comprar' ? 'border-[#00a0df]/60 bg-[#003d82]/15' : 'border-slate-600/50 hover:border-[#00a0df]/40'
 						}`}>
 							<input
@@ -301,17 +303,17 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 									if (target) setOperationType(target.value as 'comprar');
 								}}
 								required
-								className="sr-only peer"
+								class="sr-only peer"
 							/>
-							<div className="flex items-center gap-3 w-full">
-								<div className={`w-5 h-5 rounded-full border-2 backdrop-blur-sm flex items-center justify-center transition-all shadow-sm ${
+							<div class="flex items-center gap-3 w-full">
+								<div class={`w-5 h-5 rounded-full border-2 backdrop-blur-sm flex items-center justify-center transition-all shadow-sm ${
 									operationType === 'comprar' ? 'border-[#00a0df] bg-[#00a0df] shadow-[#00a0df]/15' : 'border-slate-500/50'
 								}`}>
-									<div className={`w-2 h-2 rounded-full transition-all ${
+									<div class={`w-2 h-2 rounded-full transition-all ${
 										operationType === 'comprar' ? 'bg-white' : 'bg-slate-700'
 									}`}></div>
 								</div>
-								<span className={`text-white font-semibold transition-colors uppercase tracking-wide text-xs ${
+								<span class={`text-white font-semibold transition-colors uppercase tracking-wide text-xs ${
 									operationType === 'comprar' ? 'text-[#00a0df]' : ''
 								}`}>Comprar</span>
 							</div>
@@ -321,16 +323,16 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 
 				{/* Campos condicionales para RENTAR */}
 				{operationType === 'rentar' && (
-					<div className="space-y-5">
+					<div class="space-y-5">
 						<div>
-							<label htmlFor="budgetRentar" className="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
-								Presupuesto <span className="text-red-400">*</span>
+							<label htmlFor="budgetRentar" class="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
+								Presupuesto <span class="text-red-400">*</span>
 							</label>
 							<select
 								id="budgetRentar"
 								name="budgetRentar"
 								required
-								className="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white appearance-none cursor-pointer shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
+								class="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white appearance-none cursor-pointer shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
 							>
 								<option value="">Selecciona un rango</option>
 								<option value="20000-30000">$20,000 - $30,000 MXN</option>
@@ -344,15 +346,15 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 							</select>
 						</div>
 						<div>
-							<label htmlFor="company" className="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
-								Empresa donde labora <span className="text-red-400">*</span>
+							<label htmlFor="company" class="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
+								Empresa donde labora <span class="text-red-400">*</span>
 							</label>
 							<input
 								type="text"
 								id="company"
 								name="company"
 								required
-								className="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white placeholder-gray-400 shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
+								class="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white placeholder-gray-400 shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
 								placeholder="Ej: Empresa S.A."
 							/>
 						</div>
@@ -361,16 +363,16 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 
 				{/* Campos condicionales para COMPRAR */}
 				{operationType === 'comprar' && (
-					<div className="space-y-5">
+					<div class="space-y-5">
 						<div>
-							<label htmlFor="budgetComprar" className="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
-								Presupuesto <span className="text-red-400">*</span>
+							<label htmlFor="budgetComprar" class="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
+								Presupuesto <span class="text-red-400">*</span>
 							</label>
 							<select
 								id="budgetComprar"
 								name="budgetComprar"
 								required
-								className="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white appearance-none cursor-pointer shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
+								class="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white appearance-none cursor-pointer shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
 							>
 								<option value="">Selecciona un rango</option>
 								<option value="2500000-3000000">$2,500,000 - $3,000,000 MXN</option>
@@ -384,8 +386,8 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 							</select>
 						</div>
 						<div>
-							<label htmlFor="resourceType" className="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
-								Tipo de recurso <span className="text-red-400">*</span>
+							<label htmlFor="resourceType" class="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
+								Tipo de recurso <span class="text-red-400">*</span>
 							</label>
 							<select
 								id="resourceType"
@@ -396,7 +398,7 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 									if (target) setResourceType(target.value);
 								}}
 								required
-								className="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white appearance-none cursor-pointer shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
+								class="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white appearance-none cursor-pointer shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
 							>
 								<option value="">Selecciona el origen del recurso</option>
 								<option value="recursos-propios">Recursos propios</option>
@@ -408,16 +410,16 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 
 						{/* Campos condicionales para CRÉDITO BANCARIO */}
 						{resourceType === 'credito-bancario' && (
-							<div className="space-y-5">
+							<div class="space-y-5">
 								<div>
-									<label htmlFor="banco" className="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
-										Banco <span className="text-red-400">*</span>
+									<label htmlFor="banco" class="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
+										Banco <span class="text-red-400">*</span>
 									</label>
 									<select
 										id="banco"
 										name="banco"
 										required
-										className="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white appearance-none cursor-pointer shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
+										class="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white appearance-none cursor-pointer shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
 									>
 										<option value="">Selecciona un banco</option>
 										<option value="bbva">BBVA</option>
@@ -436,38 +438,38 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 									</select>
 								</div>
 								<div>
-									<label className="block text-sm font-bold text-white mb-3 uppercase tracking-wide">
-										¿Ya cuenta con un crédito preaprobado? <span className="text-red-400 normal-case">*</span>
+									<label class="block text-sm font-bold text-white mb-3 uppercase tracking-wide">
+										¿Ya cuenta con un crédito preaprobado? <span class="text-red-400 normal-case">*</span>
 									</label>
-									<div className="grid grid-cols-2 gap-3">
-										<label className="group relative flex items-center p-4 border-2 border-slate-600/50 cursor-pointer bg-slate-700/40 backdrop-blur-xl hover:bg-slate-700/60 transition-all shadow-md shadow-black/20 hover:shadow-md hover:shadow-black/25">
+									<div class="grid grid-cols-2 gap-3">
+										<label class="group relative flex items-center p-4 border-2 border-slate-600/50 cursor-pointer bg-slate-700/40 backdrop-blur-xl hover:bg-slate-700/60 transition-all shadow-md shadow-black/20 hover:shadow-md hover:shadow-black/25">
 											<input
 												type="radio"
 												name="creditoPreaprobado"
 												value="si"
 												required
-												className="sr-only peer"
+												class="sr-only peer"
 											/>
-											<div className="flex items-center gap-3 w-full">
-												<div className="w-5 h-5 rounded-full border-2 border-slate-500/50 peer-checked:border-[#00a0df] peer-checked:bg-[#00a0df] backdrop-blur-sm flex items-center justify-center transition-all shadow-sm peer-checked:shadow-[#00a0df]/15">
-													<div className="w-2 h-2 rounded-full bg-slate-700 peer-checked:bg-white transition-all"></div>
+											<div class="flex items-center gap-3 w-full">
+												<div class="w-5 h-5 rounded-full border-2 border-slate-500/50 peer-checked:border-[#00a0df] peer-checked:bg-[#00a0df] backdrop-blur-sm flex items-center justify-center transition-all shadow-sm peer-checked:shadow-[#00a0df]/15">
+													<div class="w-2 h-2 rounded-full bg-slate-700 peer-checked:bg-white transition-all"></div>
 												</div>
-												<span className="text-white font-semibold peer-checked:text-[#00a0df] transition-colors uppercase tracking-wide text-xs">Sí</span>
+												<span class="text-white font-semibold peer-checked:text-[#00a0df] transition-colors uppercase tracking-wide text-xs">Sí</span>
 											</div>
 										</label>
-										<label className="group relative flex items-center p-4 border-2 border-slate-600/50 cursor-pointer bg-slate-700/40 backdrop-blur-xl hover:bg-slate-700/60 transition-all shadow-md shadow-black/20 hover:shadow-md hover:shadow-black/25">
+										<label class="group relative flex items-center p-4 border-2 border-slate-600/50 cursor-pointer bg-slate-700/40 backdrop-blur-xl hover:bg-slate-700/60 transition-all shadow-md shadow-black/20 hover:shadow-md hover:shadow-black/25">
 											<input
 												type="radio"
 												name="creditoPreaprobado"
 												value="no"
 												required
-												className="sr-only peer"
+												class="sr-only peer"
 											/>
-											<div className="flex items-center gap-3 w-full">
-												<div className="w-5 h-5 rounded-full border-2 border-slate-500/50 peer-checked:border-[#00a0df] peer-checked:bg-[#00a0df] backdrop-blur-sm flex items-center justify-center transition-all shadow-sm peer-checked:shadow-[#00a0df]/15">
-													<div className="w-2 h-2 rounded-full bg-slate-700 peer-checked:bg-white transition-all"></div>
+											<div class="flex items-center gap-3 w-full">
+												<div class="w-5 h-5 rounded-full border-2 border-slate-500/50 peer-checked:border-[#00a0df] peer-checked:bg-[#00a0df] backdrop-blur-sm flex items-center justify-center transition-all shadow-sm peer-checked:shadow-[#00a0df]/15">
+													<div class="w-2 h-2 rounded-full bg-slate-700 peer-checked:bg-white transition-all"></div>
 												</div>
-												<span className="text-white font-semibold peer-checked:text-[#00a0df] transition-colors uppercase tracking-wide text-xs">No</span>
+												<span class="text-white font-semibold peer-checked:text-[#00a0df] transition-colors uppercase tracking-wide text-xs">No</span>
 											</div>
 										</label>
 									</div>
@@ -477,16 +479,16 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 
 						{/* Campos condicionales para INFONAVIT */}
 						{resourceType === 'infonavit' && (
-							<div className="space-y-5">
+							<div class="space-y-5">
 								<div>
-									<label htmlFor="modalidadInfonavit" className="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
-										Modalidad de préstamo <span className="text-red-400">*</span>
+									<label htmlFor="modalidadInfonavit" class="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
+										Modalidad de préstamo <span class="text-red-400">*</span>
 									</label>
 									<select
 										id="modalidadInfonavit"
 										name="modalidadInfonavit"
 										required
-										className="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white appearance-none cursor-pointer shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
+										class="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white appearance-none cursor-pointer shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
 									>
 										<option value="">Selecciona una modalidad</option>
 										<option value="tradicional">Tradicional</option>
@@ -496,14 +498,14 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 									</select>
 								</div>
 								<div>
-									<label htmlFor="numeroTrabajadorInfonavit" className="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
-										Número de trabajador Infonavit <span className="text-gray-400 text-xs font-normal normal-case">(opcional)</span>
+									<label htmlFor="numeroTrabajadorInfonavit" class="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
+										Número de trabajador Infonavit <span class="text-gray-400 text-xs font-normal normal-case">(opcional)</span>
 									</label>
 									<input
 										type="text"
 										id="numeroTrabajadorInfonavit"
 										name="numeroTrabajadorInfonavit"
-										className="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white placeholder-gray-400 shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
+										class="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white placeholder-gray-400 shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
 										placeholder="Ej: 12345678901"
 									/>
 								</div>
@@ -512,16 +514,16 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 
 						{/* Campos condicionales para FOVISSSTE */}
 						{resourceType === 'fovissste' && (
-							<div className="space-y-5">
+							<div class="space-y-5">
 								<div>
-									<label htmlFor="modalidadFovissste" className="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
-										Modalidad de préstamo <span className="text-red-400">*</span>
+									<label htmlFor="modalidadFovissste" class="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
+										Modalidad de préstamo <span class="text-red-400">*</span>
 									</label>
 									<select
 										id="modalidadFovissste"
 										name="modalidadFovissste"
 										required
-										className="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white appearance-none cursor-pointer shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
+										class="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white appearance-none cursor-pointer shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
 									>
 										<option value="">Selecciona una modalidad</option>
 										<option value="tradicional">Tradicional</option>
@@ -530,14 +532,14 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 									</select>
 								</div>
 								<div>
-									<label htmlFor="numeroTrabajadorFovissste" className="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
-										Número de trabajador Fovissste <span className="text-gray-400 text-xs font-normal normal-case">(opcional)</span>
+									<label htmlFor="numeroTrabajadorFovissste" class="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
+										Número de trabajador Fovissste <span class="text-gray-400 text-xs font-normal normal-case">(opcional)</span>
 									</label>
 									<input
 										type="text"
 										id="numeroTrabajadorFovissste"
 										name="numeroTrabajadorFovissste"
-										className="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white placeholder-gray-400 shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
+										class="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all bg-slate-700/40 backdrop-blur-xl text-white placeholder-gray-400 shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
 										placeholder="Ej: 12345678901"
 									/>
 								</div>
@@ -547,14 +549,14 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 				)}
 
 				<div>
-					<label htmlFor="notes" className="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
-						Notas adicionales <span className="text-gray-400 text-xs font-normal normal-case">(opcional)</span>
+					<label htmlFor="notes" class="block text-sm font-bold text-white mb-2 uppercase tracking-wide">
+						Notas adicionales <span class="text-gray-400 text-xs font-normal normal-case">(opcional)</span>
 					</label>
 					<textarea
 						id="notes"
 						name="notes"
 						rows={4}
-						className="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all resize-none bg-slate-700/40 backdrop-blur-xl text-white placeholder-gray-400 shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
+						class="w-full px-4 py-3 border-2 border-slate-600/50 focus:ring-2 focus:ring-[#00a0df]/30 focus:border-[#00a0df]/70 outline-none transition-all resize-none bg-slate-700/40 backdrop-blur-xl text-white placeholder-gray-400 shadow-sm shadow-black/15 hover:bg-slate-700/50 font-light"
 						placeholder="Cuéntanos sobre el motivo de tu cita o cualquier información adicional que consideres relevante..."
 					></textarea>
 				</div>
@@ -562,20 +564,20 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 				<button
 					type="submit"
 					disabled={isSubmitting}
-					className="w-full bg-[#003d82] backdrop-blur-xl text-white font-bold py-4 px-6 hover:bg-[#004C97] transition-all duration-300 shadow-md shadow-black/25 hover:shadow-md hover:shadow-black/30 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 border-2 border-[#00a0df]/30 hover:border-[#00a0df]/50 uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+					class="w-full bg-[#003d82] backdrop-blur-xl text-white font-bold py-4 px-6 hover:bg-[#004C97] transition-all duration-300 shadow-md shadow-black/25 hover:shadow-md hover:shadow-black/30 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 border-2 border-[#00a0df]/30 hover:border-[#00a0df]/50 uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					{isSubmitting ? (
-						<span className="flex items-center gap-2">
-							<svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-								<circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-								<path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+						<span class="flex items-center gap-2">
+							<svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+								<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+								<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
 							</svg>
 							Procesando...
 						</span>
 					) : (
 						<>
 							<span>Confirmar cita</span>
-							<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
 							</svg>
 						</>
