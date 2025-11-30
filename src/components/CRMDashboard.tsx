@@ -41,6 +41,11 @@ type Tab = 'overview' | 'properties' | 'appointments' | 'clients';
 export default function CRMDashboard({ appointments, properties, clients }: CRMDashboardProps) {
 	const [activeTab, setActiveTab] = useState<Tab>('overview');
 
+	const handleTabChange = (tabId: Tab) => {
+		console.log('Changing tab to:', tabId);
+		setActiveTab(tabId);
+	};
+
 	// Calcular estadísticas generales
 	const stats = {
 		totalProperties: properties.length,
@@ -76,10 +81,7 @@ export default function CRMDashboard({ appointments, properties, clients }: CRMD
 						<button
 							key={tab.id}
 							type="button"
-							onClick={(e) => {
-								e.preventDefault();
-								setActiveTab(tab.id);
-							}}
+							onClick={() => handleTabChange(tab.id)}
 							class={`px-6 py-3 font-bold uppercase tracking-wide transition-all border-2 cursor-pointer ${
 								activeTab === tab.id
 									? 'bg-[#003d82] border-[#00a0df]/60 text-white shadow-md shadow-black/20'
