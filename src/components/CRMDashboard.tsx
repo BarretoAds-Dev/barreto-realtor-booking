@@ -75,8 +75,12 @@ export default function CRMDashboard({ appointments, properties, clients }: CRMD
 					{tabs.map((tab) => (
 						<button
 							key={tab.id}
-							onClick={() => setActiveTab(tab.id)}
-							class={`px-6 py-3 font-bold uppercase tracking-wide transition-all border-2 ${
+							type="button"
+							onClick={(e) => {
+								e.preventDefault();
+								setActiveTab(tab.id);
+							}}
+							class={`px-6 py-3 font-bold uppercase tracking-wide transition-all border-2 cursor-pointer ${
 								activeTab === tab.id
 									? 'bg-[#003d82] border-[#00a0df]/60 text-white shadow-md shadow-black/20'
 									: 'bg-slate-700/40 border-slate-600/50 text-gray-300 hover:bg-slate-700/60 hover:border-[#00a0df]/40'
@@ -201,15 +205,15 @@ export default function CRMDashboard({ appointments, properties, clients }: CRMD
 				</div>
 			)}
 
-			{activeTab === 'properties' && (
+			{activeTab === 'properties' && properties.length >= 0 && (
 				<PropertiesSection properties={properties} />
 			)}
 
-			{activeTab === 'appointments' && (
+			{activeTab === 'appointments' && appointments.length >= 0 && (
 				<AppointmentsSection appointments={appointments} />
 			)}
 
-			{activeTab === 'clients' && (
+			{activeTab === 'clients' && clients.length >= 0 && (
 				<ClientsSection clients={clients} />
 			)}
 		</div>
