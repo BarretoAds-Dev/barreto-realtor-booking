@@ -41,6 +41,7 @@ export default function AppointmentBooking({ availableSlots: initialAvailableSlo
 	const [appointmentData, setAppointmentData] = useState<any>(null);
 	const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>(initialAvailableSlots);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
+	const [isRefreshing, setIsRefreshing] = useState(false);
 
 	// Encontrar slots para la fecha seleccionada
 	const slotsForSelectedDate = useMemo(() => {
@@ -57,26 +58,37 @@ export default function AppointmentBooking({ availableSlots: initialAvailableSlo
 		return `${year}-${month}-${day}`;
 	};
 
-	const handleDateSelect = async (date: Date) => {
-		const dateStr = formatDateLocal(date);
-		setSelectedDate(dateStr);
-		setSelectedTime(null);
-		setCurrentStep(2);
+	// Función optimizada para refrescar disponibilidad
+	const refreshAvailability = async () => {
+		if (isRefreshing) return; // Evitar llamadas simultáneas
 		
-		// Refrescar disponibilidad cuando se selecciona una fecha
+		setIsRefreshing(true);
 		try {
 			const startDate = new Date().toISOString().split('T')[0];
 			const endDate = new Date();
 			endDate.setMonth(endDate.getMonth() + 6);
 			const endDateStr = endDate.toISOString().split('T')[0];
 			
-			const response = await fetch(`/api/availability?start=${startDate}&end=${endDateStr}`);
+			const response = await fetch(`/api/citas/availability?start=${startDate}&end=${endDateStr}`);
 			if (response.ok) {
 				const refreshedSlots = await response.json();
 				setAvailableSlots(refreshedSlots);
 			}
 		} catch (error) {
 			console.warn('Error al refrescar disponibilidad:', error);
+		} finally {
+			setIsRefreshing(false);
+		}
+	};
+
+	const handleDateSelect = async (date: Date) => {
+		const dateStr = formatDateLocal(date);
+		setSelectedDate(dateStr);
+		setSelectedTime(null);
+		setCurrentStep(2);
+		// Refrescar disponibilidad cuando se selecciona una fecha (solo si no está refrescando)
+		if (!isRefreshing) {
+			refreshAvailability();
 		}
 	};
 
@@ -90,20 +102,7 @@ export default function AppointmentBooking({ availableSlots: initialAvailableSlo
 		
 		// Refrescar disponibilidad inmediatamente después de crear la cita
 		// Esto asegura que el slot se marque como ocupado
-		try {
-			const startDate = new Date().toISOString().split('T')[0];
-			const endDate = new Date();
-			endDate.setMonth(endDate.getMonth() + 6);
-			const endDateStr = endDate.toISOString().split('T')[0];
-			
-			const response = await fetch(`/api/availability?start=${startDate}&end=${endDateStr}`);
-			if (response.ok) {
-				const refreshedSlots = await response.json();
-				setAvailableSlots(refreshedSlots);
-			}
-		} catch (error) {
-			console.warn('Error al refrescar disponibilidad después de crear cita:', error);
-		}
+		refreshAvailability();
 		
 		// Mostrar mensaje de éxito y volver a la selección de horarios
 		// para que el usuario vea que el slot está en rojo
@@ -125,21 +124,9 @@ export default function AppointmentBooking({ availableSlots: initialAvailableSlo
 		setCurrentStep(1);
 		setSelectedDate(null);
 		setSelectedTime(null);
-		
-		// Refrescar disponibilidad cuando se vuelve al calendario
-		try {
-			const startDate = new Date().toISOString().split('T')[0];
-			const endDate = new Date();
-			endDate.setMonth(endDate.getMonth() + 6);
-			const endDateStr = endDate.toISOString().split('T')[0];
-			
-			const response = await fetch(`/api/availability?start=${startDate}&end=${endDateStr}`);
-			if (response.ok) {
-				const refreshedSlots = await response.json();
-				setAvailableSlots(refreshedSlots);
-			}
-		} catch (error) {
-			console.warn('Error al refrescar disponibilidad:', error);
+		// Refrescar disponibilidad cuando se vuelve al calendario (solo si no está refrescando)
+		if (!isRefreshing) {
+			refreshAvailability();
 		}
 	};
 
@@ -153,21 +140,9 @@ export default function AppointmentBooking({ availableSlots: initialAvailableSlo
 		setSelectedDate(null);
 		setSelectedTime(null);
 		setAppointmentData(null);
-		
-		// Refrescar disponibilidad después de crear una cita
-		try {
-			const startDate = new Date().toISOString().split('T')[0];
-			const endDate = new Date();
-			endDate.setMonth(endDate.getMonth() + 6);
-			const endDateStr = endDate.toISOString().split('T')[0];
-			
-			const response = await fetch(`/api/availability?start=${startDate}&end=${endDateStr}`);
-			if (response.ok) {
-				const refreshedSlots = await response.json();
-				setAvailableSlots(refreshedSlots);
-			}
-		} catch (error) {
-			console.warn('Error al refrescar disponibilidad:', error);
+		// Refrescar disponibilidad después de crear una cita (solo si no está refrescando)
+		if (!isRefreshing) {
+			refreshAvailability();
 		}
 	};
 

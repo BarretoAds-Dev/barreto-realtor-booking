@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { supabase, type AvailabilitySlot, type AppointmentInsert } from '../../lib/supabase';
-import { validateAppointment } from '../../schemas/appointmentSchema';
+import { supabase, type AvailabilitySlot, type AppointmentInsert } from '../../../config/supabase/supabase';
+import { validateAppointment } from '../../../config/schemas/appointmentSchema';
 
 // Marcar como server-rendered para permitir POST requests
 export const prerender = false;
@@ -244,7 +244,7 @@ export const POST: APIRoute = async ({ request }) => {
 		}
 
 		// Type assertion para el appointment
-		const typedAppointment = appointment as import('../../lib/supabase').Appointment;
+		const typedAppointment = appointment as import('../../../config/supabase/supabase').Appointment;
 
 		console.log('✅ Cita creada exitosamente:', typedAppointment.id);
 

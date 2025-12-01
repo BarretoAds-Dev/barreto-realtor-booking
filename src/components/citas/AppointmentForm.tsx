@@ -1,6 +1,6 @@
 /** @jsxImportSource preact */
 import { useState } from 'preact/hooks';
-import { validateAppointmentClient } from '../utils/clientValidation';
+import { validateAppointmentClient } from '../../config/utils/clientValidation';
 
 type AppointmentFormData = any;
 
@@ -189,7 +189,7 @@ export default function AppointmentForm({ selectedDate, selectedTime, onBack, on
 
 		try {
 			// Enviar a la API
-			const response = await fetch('/api/appointments', {
+			const response = await fetch('/api/citas/appointments', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',

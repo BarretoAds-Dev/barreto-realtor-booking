@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { supabase, type AvailabilitySlot } from '../../lib/supabase';
+import { supabase, type AvailabilitySlot } from '../../../config/supabase/supabase';
 
 export const GET: APIRoute = async ({ url }) => {
 	const startDate =

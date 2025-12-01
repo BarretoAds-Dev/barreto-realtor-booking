@@ -1,0 +1,50 @@
+---
+---
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>InmoCRM - Gestión Inmobiliaria</title>
+		<style>
+			/* Reset global agresivo */
+			* {
+				box-sizing: border-box;
+			}
+			html {
+				margin: 0 !important;
+				padding: 0 !important;
+				overflow-x: hidden;
+				max-width: 100vw;
+				width: 100%;
+				height: 100%;
+			}
+			body {
+				margin: 0 !important;
+				padding: 0 !important;
+				overflow-x: hidden;
+				max-width: 100vw;
+				width: 100%;
+				min-height: 100vh;
+				position: relative;
+			}
+			body > * {
+				margin: 0;
+				padding: 0;
+			}
+			/* Ocultar scrollbar pero mantener funcionalidad */
+			.scrollbar-hide {
+				-ms-overflow-style: none;
+				scrollbar-width: none;
+			}
+			.scrollbar-hide::-webkit-scrollbar {
+				display: none;
+			}
+		</style>
+	</head>
+	<body class="bg-gray-50" style="margin: 0 !important; padding: 0 !important; width: 100%; height: 100%;">
+		<slot />
+	</body>
+</html>

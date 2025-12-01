@@ -1,0 +1,158 @@
+---
+import Welcome from '../../components/Welcome.astro';
+import Layout from '../../layouts/Layout.astro';
+import { getEntry, getCollection } from 'astro:content';
+
+// 📊 Cargar datos de Content Collections (fallback)
+let scheduleConfig: { data: { slotDuration: number; bufferTime: number; businessHours: Record<string, any> } } = {
+	data: {
+		slotDuration: 45,
+		bufferTime: 5,
+		businessHours: {}
+	}
+};
+let holidays: Array<{ data: any }> = [];
+
+try {
+	const scheduleEntry = await getEntry('schedule', 'business-hours');
+	const holidaysCollection = await getCollection('holidays');
+	
+	scheduleConfig = scheduleEntry as { data: { slotDuration: number; bufferTime: number; businessHours: Record<string, any> } };
+	holidays = holidaysCollection as Array<{ data: any }>;
+} catch (error) {
+	console.error('Error loading content collections:', error);
+}
+
+// 🔧 Configuración
+const config = {
+	slotDuration: scheduleConfig?.data?.slotDuration ?? 45,
+	bufferTime: scheduleConfig?.data?.bufferTime ?? 5,
+	businessHours: scheduleConfig?.data?.businessHours ?? {}
+};
+
+// 🚀 Intentar cargar disponibilidad desde API (si Supabase está configurado)
+let filteredSlots: any[] = [];
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
+
+if (supabaseUrl) {
+	// Usar API de Supabase
+	try {
+		const startDate = new Date().toISOString().split('T')[0];
+		const endDate = new Date();
+		endDate.setMonth(endDate.getMonth() + 6);
+		const endDateStr = endDate.toISOString().split('T')[0];
+		
+		// En build time, hacer fetch a la API interna
+		const baseUrl = import.meta.env.SITE || 'http://localhost:4321';
+		const response = await fetch(`${baseUrl}/api/citas/availability?start=${startDate}&end=${endDateStr}`);
+		
+		if (response.ok) {
+			filteredSlots = await response.json();
+		} else {
+			console.warn('API de disponibilidad no disponible, usando generación local');
+			throw new Error('API unavailable');
+		}
+	} catch (error) {
+		console.warn('Error al cargar desde API, usando generación local:', error);
+		// Fallback a generación local
+		filteredSlots = generateAvailableSlotsLocal();
+	}
+} else {
+	// Sin Supabase configurado, usar generación local
+	filteredSlots = generateAvailableSlotsLocal();
+}
+
+// Función de fallback para generar slots localmente
+function generateAvailableSlotsLocal(): any[] {
+	// 📅 Crear Set de días festivos
+	const holidayDates = new Set(
+		holidays.flatMap((h: any) => {
+			return Array.isArray(h.data) 
+				? h.data.map((holiday: any) => holiday?.date).filter(Boolean)
+				: [h.data?.date].filter(Boolean);
+		})
+	);
+
+	// 🗓️ Función para obtener el nombre del día de la semana en inglés
+	function getDayOfWeek(date: Date): string {
+		const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+		return days[date.getDay()];
+	}
+
+	// ⏰ Función para generar slots de tiempo
+	function generateTimeSlots(openTime: string, closeTime: string, slotDuration: number): string[] {
+		const slots: string[] = [];
+		const [openHour, openMin] = openTime.split(':').map(Number);
+		const [closeHour, closeMin] = closeTime.split(':').map(Number);
+		
+		const openMinutes = openHour * 60 + openMin;
+		const closeMinutes = closeHour * 60 + closeMin;
+		
+		for (let minutes = openMinutes; minutes + slotDuration <= closeMinutes; minutes += slotDuration) {
+			const hours = Math.floor(minutes / 60);
+			const mins = minutes % 60;
+			slots.push(`${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`);
+		}
+		
+		return slots;
+	}
+
+	// 📆 Generar slots disponibles
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+	
+	const endDate = new Date(today);
+	endDate.setMonth(endDate.getMonth() + 6);
+	
+	const availableSlots: any[] = [];
+	const currentDate = new Date(today);
+	
+	while (currentDate <= endDate) {
+		const dateStr = currentDate.toISOString().split('T')[0];
+		const dayOfWeek = getDayOfWeek(currentDate);
+		const dayConfig = config.businessHours[dayOfWeek];
+		
+		// Verificar si el día está habilitado y no es festivo
+		if (dayConfig?.enabled && !holidayDates.has(dateStr)) {
+			const openTime = dayConfig.open;
+			const closeTime = dayConfig.close;
+			
+			if (openTime && closeTime) {
+				const timeSlots = generateTimeSlots(openTime, closeTime, config.slotDuration);
+				
+				// Crear slots disponibles (sin citas reservadas en modo local)
+				const slots = timeSlots.map((time) => ({
+					time,
+					available: true,
+					capacity: 1,
+					booked: 0
+				}));
+				
+				if (slots.length > 0) {
+					availableSlots.push({
+						date: dateStr,
+						dayOfWeek,
+						slots: slots,
+						metadata: {
+							notes: "Horario generado automáticamente",
+							specialHours: false
+						}
+					});
+				}
+			}
+		}
+		
+		// Avanzar al siguiente día
+		currentDate.setDate(currentDate.getDate() + 1);
+	}
+	
+	return availableSlots;
+}
+---
+
+<Layout>
+	<Welcome 
+		availableSlots={filteredSlots}
+		config={config}
+	/>
+</Layout>
