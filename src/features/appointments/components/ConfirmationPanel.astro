@@ -45,16 +45,19 @@ const { appointmentData } = Astro.props;
 	</div>
 )}
 
-<script>
+<script is:inline>
 	// Handler mínimo para el botón de nueva cita
-	const buttonId = document.currentScript?.getAttribute('data-button-id') || 'new-appointment-btn';
-	const button = document.getElementById(buttonId);
-	
-	if (button) {
-		button.addEventListener('click', () => {
-			// Disparar evento personalizado que el componente padre puede escuchar
-			window.dispatchEvent(new CustomEvent('new-appointment'));
-		});
-	}
+	// Se ejecuta cuando el componente se renderiza en el cliente
+	(function() {
+		const buttonId = 'new-appointment-btn';
+		const button = document.getElementById(buttonId);
+		
+		if (button) {
+			button.addEventListener('click', () => {
+				// Disparar evento personalizado que el componente padre puede escuchar
+				window.dispatchEvent(new CustomEvent('new-appointment'));
+			});
+		}
+	})();
 </script>
 
