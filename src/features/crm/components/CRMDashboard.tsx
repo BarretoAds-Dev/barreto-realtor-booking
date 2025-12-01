@@ -179,20 +179,23 @@ export default function CRMApp() {
 		setError(null);
 		try {
 			const url = `/api/crm/appointments-list${statusFilter !== 'all' ? `?status=${statusFilter}` : ''}`;
+			console.log('🔍 Fetching appointments from:', url);
 			const response = await fetch(url);
 			if (response.ok) {
 				const data = await response.json();
+				console.log('✅ Appointments received:', data.length, 'citas');
+				console.log('📋 Data:', data);
 				setAppointments(data);
 			} else {
 				const errorData = await response.json().catch(() => ({}));
 				const errorMsg = errorData.error || errorData.message || 'Error al cargar las citas';
 				setError(errorMsg);
-				console.error('Error al cargar citas:', errorData);
+				console.error('❌ Error al cargar citas:', errorData);
 			}
 		} catch (error) {
 			const errorMsg = 'Error de conexión. Por favor verifica tu conexión e intenta nuevamente.';
 			setError(errorMsg);
-			console.error('Error al cargar citas:', error);
+			console.error('❌ Error al cargar citas:', error);
 		} finally {
 			setIsLoading(false);
 		}

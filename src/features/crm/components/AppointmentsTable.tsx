@@ -144,15 +144,17 @@ export default function AppointmentsTable({ appointments, isLoading, onStatusCha
 	};
 
 	const formatDate = (dateStr: string, timeStr: string) => {
-		const date = new Date(dateStr);
-		const [hours, minutes] = timeStr.split(':');
-		const hour = parseInt(hours);
+		// Parsear fecha en formato YYYY-MM-DD
+		const [year, month, day] = dateStr.split('-').map(Number);
+		const date = new Date(year, month - 1, day);
+		
+		// Parsear hora (puede venir como HH:MM:SS o HH:MM)
+		const [hours, minutes] = timeStr.split(':').map(Number);
+		const hour = hours;
 		const ampm = hour >= 12 ? 'p.m.' : 'a.m.';
 		const displayHour = hour % 12 || 12;
-		const day = date.getDate();
-		const month = date.getMonth() + 1;
-		const year = date.getFullYear();
-		return `${day}/${month}/${year} ${displayHour}:${minutes.padStart(2, '0')} ${ampm}`;
+		
+		return `${day}/${month}/${year} ${displayHour}:${String(minutes).padStart(2, '0')} ${ampm}`;
 	};
 
 	const getInitials = (name: string) => {
@@ -176,6 +178,12 @@ export default function AppointmentsTable({ appointments, isLoading, onStatusCha
 		);
 	}
 
+	// Debug: Log appointments received
+	useEffect(() => {
+		console.log('📊 AppointmentsTable received:', appointments.length, 'appointments');
+		console.log('📋 Appointments data:', appointments);
+	}, [appointments]);
+
 	if (appointments.length === 0) {
 		return (
 			<div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden w-full max-w-full">
@@ -192,7 +200,7 @@ export default function AppointmentsTable({ appointments, isLoading, onStatusCha
 					</div>
 					<p class="text-lg font-semibold text-gray-900 mb-1">No hay citas registradas</p>
 					<p class="text-sm text-gray-500 text-center max-w-md">
-						Las citas aparecerán aquí cuando se creen. Puedes crear una nueva cita desde el botón "+ Nueva Cita" en la parte superior.
+						Las citas aparecerán aquí cuando se creen. Puedes crear una nueva cita desde el botón "Agendar Cita" en la parte superior.
 					</p>
 				</div>
 			</div>
