@@ -1,0 +1,16 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { PropertiesDashboard } from '../../features/easybroker/components/PropertiesDashboard';
+---
+
+<Layout>
+	<PropertiesDashboard client:load />
+</Layout>
+
+<style>
+	/* Asegurar que el dashboard tenga el fondo correcto */
+	:global(body) {
+		background-color: #f9fafb;
+	}
+</style>
+

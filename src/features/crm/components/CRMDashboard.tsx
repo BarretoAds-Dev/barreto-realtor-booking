@@ -7,6 +7,7 @@ import CreateAppointmentModal from './CreateAppointmentModal';
 import AdvancedFilters, { type FilterState } from './AdvancedFilters';
 import AdminSettings from './AdminSettings';
 import DashboardPanel from './DashboardPanel';
+import { PropertiesDashboard } from '../../easybroker/components/PropertiesDashboard';
 import { Button } from '../../../shared/ui';
 
 interface Appointment {
@@ -409,9 +410,8 @@ export default function CRMApp() {
 				) : currentView === 'dashboard' ? (
 					<DashboardPanel onNavigateToAppointments={() => setCurrentView('appointments')} />
 				) : currentView === 'properties' ? (
-					<div class="w-full lg:max-w-7xl lg:mx-auto">
-						<h1 class="text-xl sm:text-2xl font-bold text-gray-900 mb-3">Propiedades</h1>
-						<p class="text-gray-600 text-xs sm:text-sm">Gestión de propiedades (próximamente)</p>
+					<div class="w-full">
+						<PropertiesDashboard />
 					</div>
 				) : currentView === 'settings' ? (
 					<AdminSettings />

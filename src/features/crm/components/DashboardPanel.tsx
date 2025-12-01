@@ -41,6 +41,7 @@ export default function DashboardPanel({ onNavigateToAppointments }: DashboardPa
 	const [currentTime, setCurrentTime] = useState<string>('');
 	const [currentDate, setCurrentDate] = useState<string>('');
 	const [appointments, setAppointments] = useState<Appointment[]>([]);
+	const [propertiesCount, setPropertiesCount] = useState<number>(0);
 	const [isLoading, setIsLoading] = useState(true);
 
 	// Cargar perfil del usuario
@@ -95,6 +96,39 @@ export default function DashboardPanel({ onNavigateToAppointments }: DashboardPa
 		const interval = setInterval(updateDateTime, 60000); // Actualizar cada minuto
 
 		return () => clearInterval(interval);
+	}, []);
+
+	// Cargar propiedades activas
+	useEffect(() => {
+		const loadProperties = async () => {
+			try {
+				// Cargar de Easy Broker
+				const easyBrokerResponse = await fetch('/api/easybroker/properties?limit=100');
+				let easyBrokerCount = 0;
+				if (easyBrokerResponse.ok) {
+					const easyBrokerData = await easyBrokerResponse.json();
+					easyBrokerCount = easyBrokerData.content?.filter((prop: any) =>
+						prop.status === 'active' || prop.status === 'published'
+					).length || 0;
+				}
+
+				// Cargar de Supabase
+				const supabaseResponse = await fetch('/api/properties');
+				let supabaseCount = 0;
+				if (supabaseResponse.ok) {
+					const supabaseData = await supabaseResponse.json();
+					supabaseCount = supabaseData.properties?.filter((prop: any) =>
+						prop.status === 'active' || !prop.status
+					).length || 0;
+				}
+
+				setPropertiesCount(easyBrokerCount + supabaseCount);
+			} catch (error) {
+				console.error('Error al cargar propiedades:', error);
+			}
+		};
+
+		loadProperties();
 	}, []);
 
 	// Cargar citas desde la API
@@ -183,7 +217,7 @@ export default function DashboardPanel({ onNavigateToAppointments }: DashboardPa
 		return [
 			{
 				icon: '🏠',
-				value: '0',
+				value: propertiesCount.toString(),
 				label: 'Propiedades Activas',
 				change: '0%',
 				changePositive: true,
@@ -203,7 +237,7 @@ export default function DashboardPanel({ onNavigateToAppointments }: DashboardPa
 				changePositive: uniqueClients >= lastMonthUniqueClients,
 			},
 		];
-	}, [appointments]);
+	}, [appointments, propertiesCount]);
 
 	// Calcular datos del gráfico semanal: citas nuevas y canceladas
 	const weeklyData = useMemo(() => {
