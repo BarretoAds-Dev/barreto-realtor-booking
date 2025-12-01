@@ -1,4 +1,4 @@
-// Exportar configuraciones
+// Exportar configuraciones de Supabase
 export * from './supabase';
 export * from './auth';
 
