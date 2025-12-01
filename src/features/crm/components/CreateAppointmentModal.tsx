@@ -60,7 +60,7 @@ export default function CreateAppointmentModal({ isOpen, onClose, onSuccess }: C
 			endDate.setMonth(endDate.getMonth() + 6);
 			const endDateStr = endDate.toISOString().split('T')[0];
 			
-			const response = await fetch(`/api/citas/availability?start=${startDate}&end=${endDateStr}`);
+			const response = await fetch(`/api/availability?start=${startDate}&end=${endDateStr}`);
 			if (response.ok) {
 				const slots = await response.json();
 				setAvailableSlots(slots);

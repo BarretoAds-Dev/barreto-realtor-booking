@@ -180,7 +180,7 @@ export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack,
 		setErrors({});
 
 		try {
-			const response = await fetch('/api/citas/appointments', {
+			const response = await fetch('/api/appointments', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
