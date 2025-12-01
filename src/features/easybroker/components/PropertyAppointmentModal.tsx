@@ -96,20 +96,53 @@ export function PropertyAppointmentModal({
 	};
 
 	const handleFormSubmit = async (data: any): Promise<void> => {
-		// Determinar el ID correcto de la propiedad
-		// Si tiene 'id' (propiedad de Supabase), usar ese
-		// Si tiene 'public_id' (propiedad de Easy Broker), necesitamos buscar el ID de Supabase o usar null
-		// Por ahora, usamos null y dejamos que el sistema maneje la relación por título
-		const propertyId = property && 'id' in property && typeof property.id === 'string'
-			? property.id
-			: null;
+		let propertyId: string | null = null;
+
+		// Si la propiedad tiene 'id' (propiedad de Supabase), usar ese directamente
+		if (property && 'id' in property && typeof property.id === 'string') {
+			propertyId = property.id;
+		} else if (property && property.public_id) {
+			// Si es una propiedad de Easy Broker, buscar o crear en Supabase
+			try {
+				// Primero, intentar buscar si ya existe una propiedad con este public_id
+				// (asumiendo que guardamos el public_id en un campo o en las notas)
+				// Por ahora, intentamos crear/sincronizar la propiedad en Supabase
+				const propertyResponse = await fetch('/api/properties/sync-easybroker', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						public_id: property.public_id,
+						title: property.title,
+						address: typeof property.location === 'string'
+							? property.location
+							: property.location?.address || property.location?.city || 'Dirección no disponible',
+						price: property.operations[0]?.amount || 0,
+						property_type: property.property_type || 'casa',
+						bedrooms: property.features?.bedrooms || null,
+						bathrooms: property.features?.bathrooms || null,
+						area: property.features?.construction_size || null,
+						description: property.description || null,
+					}),
+				});
+
+				if (propertyResponse.ok) {
+					const result = await propertyResponse.json();
+					propertyId = result.property?.id || null;
+				}
+			} catch (error) {
+				console.warn('No se pudo sincronizar la propiedad con Supabase:', error);
+				// Continuar sin propertyId, pero guardar info en notas
+			}
+		}
 
 		// Agregar información de la propiedad a los datos de la cita
 		const appointmentData = {
 			...data,
 			propertyId: propertyId,
 			notes: property
-				? `${data.notes || ''}\n\nPropiedad: ${property.title}${property.location ? `\nDirección: ${property.location}` : ''}`.trim()
+				? `${data.notes || ''}\n\nPropiedad: ${property.title}${property.location ? `\nDirección: ${typeof property.location === 'string' ? property.location : property.location.address || property.location.city || ''}` : ''}${property.public_id ? `\nEasy Broker ID: ${property.public_id}` : ''}`.trim()
 				: data.notes,
 		};
 
@@ -279,6 +312,30 @@ export function PropertyAppointmentModal({
 								selectedTime={selectedTime}
 								onBack={handleBackToTime}
 								onSubmit={handleFormSubmit}
+								preselectedProperty={property ? {
+									id: property.public_id,
+									title: property.title,
+									address: typeof property.location === 'string'
+										? property.location
+										: property.location?.address || property.location?.city || 'Dirección no disponible',
+									price: property.operations[0]?.amount || 0,
+									property_type: property.property_type,
+									operations: property.operations,
+								} : null}
+								allowedOperationType={
+									property?.operations && property.operations.length > 0
+										? (() => {
+												const opType = property.operations[0].type.toLowerCase();
+												if (opType.includes('rent') || opType.includes('renta')) {
+													return 'rentar';
+												}
+												if (opType.includes('sale') || opType.includes('venta')) {
+													return 'comprar';
+												}
+												return null;
+											})()
+										: null
+								}
 							/>
 						)}
 					</div>

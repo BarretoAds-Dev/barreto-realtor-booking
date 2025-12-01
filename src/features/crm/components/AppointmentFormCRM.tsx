@@ -1,5 +1,5 @@
 /** @jsxImportSource preact */
-import { useState, useEffect } from 'preact/hooks';
+import { useState, useEffect, useMemo } from 'preact/hooks';
 import { validateAppointmentClient } from '../../../core/utils/validation';
 
 type AppointmentFormData = any;
@@ -9,6 +9,15 @@ interface AppointmentFormCRMProps {
 	selectedTime: string | null;
 	onBack: () => void;
 	onSubmit: (data: AppointmentFormData) => void;
+	preselectedProperty?: {
+		id: string;
+		title: string;
+		address: string;
+		price: number;
+		property_type: string;
+		operations?: Array<{ type: string; amount: number }>;
+	} | null;
+	allowedOperationType?: 'rentar' | 'comprar' | null; // Si está definido, solo mostrar esta opción
 }
 
 interface Property {
@@ -19,14 +28,133 @@ interface Property {
 	property_type: string;
 }
 
-export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack, onSubmit }: AppointmentFormCRMProps) {
-	const [operationType, setOperationType] = useState<'rentar' | 'comprar' | ''>('');
+// Componente para selector de propiedades agrupadas por colonia
+function PropertySelector({
+	properties,
+	selectedPropertyId,
+	onPropertyChange,
+	isLoading,
+}: {
+	properties: Property[];
+	selectedPropertyId: string;
+	onPropertyChange: (id: string) => void;
+	isLoading: boolean;
+}) {
+	// Agrupar propiedades por colonia (extraer de la dirección)
+	const groupedProperties = useMemo(() => {
+		const groups: Record<string, Property[]> = {};
+		const other: Property[] = [];
+
+		properties.forEach((prop) => {
+			// Intentar extraer la colonia de la dirección
+			// Formato típico: "Colonia, Delegación, Ciudad" o "Dirección, Colonia, Ciudad"
+			const addressParts = prop.address.split(',').map((p) => p.trim());
+			let colonia = '';
+
+			// Buscar la colonia (generalmente el segundo o tercer elemento)
+			if (addressParts.length >= 2) {
+				// Si el primer elemento parece una dirección (tiene números), la colonia es el segundo
+				if (/\d/.test(addressParts[0])) {
+					colonia = addressParts[1] || addressParts[0];
+				} else {
+					colonia = addressParts[0];
+				}
+			} else {
+				colonia = prop.address;
+			}
+
+			// Limpiar la colonia (remover "Col." o "Colonia")
+			colonia = colonia.replace(/^(Col\.|Colonia)\s*/i, '').trim();
+
+			if (colonia && colonia.length > 0) {
+				if (!groups[colonia]) {
+					groups[colonia] = [];
+				}
+				groups[colonia].push(prop);
+			} else {
+				other.push(prop);
+			}
+		});
+
+		// Ordenar colonias alfabéticamente
+		const sortedGroups = Object.keys(groups).sort();
+		return { groups, sortedGroups, other };
+	}, [properties]);
+
+	if (isLoading) {
+		return (
+			<select
+				id="propertyId"
+				name="propertyId"
+				disabled
+				class="w-full px-4 py-2 border border-gray-300 rounded-md text-sm bg-gray-50"
+			>
+				<option>Cargando propiedades...</option>
+			</select>
+		);
+	}
+
+	return (
+		<select
+			id="propertyId"
+			name="propertyId"
+			value={selectedPropertyId}
+			onChange={(e) => onPropertyChange((e.target as HTMLSelectElement).value)}
+			class="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
+		>
+			<option value="">Seleccionar propiedad (opcional)</option>
+			{groupedProperties.sortedGroups.map((colonia) => (
+				<optgroup key={colonia} label={`📍 ${colonia}`}>
+					{groupedProperties.groups[colonia].map((prop) => (
+						<option key={prop.id} value={prop.id}>
+							{prop.title} - {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(prop.price)}
+						</option>
+					))}
+				</optgroup>
+			))}
+			{groupedProperties.other.length > 0 && (
+				<optgroup label="📍 Otras ubicaciones">
+					{groupedProperties.other.map((prop) => (
+						<option key={prop.id} value={prop.id}>
+							{prop.title} - {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(prop.price)}
+						</option>
+					))}
+				</optgroup>
+			)}
+		</select>
+	);
+}
+
+export default function AppointmentFormCRM({
+	selectedDate,
+	selectedTime,
+	onBack,
+	onSubmit,
+	preselectedProperty,
+	allowedOperationType,
+}: AppointmentFormCRMProps) {
+	// Si hay una propiedad preseleccionada, usar su ID y determinar el tipo de operación
+	const getInitialOperationType = (): 'rentar' | 'comprar' | '' => {
+		if (allowedOperationType) return allowedOperationType;
+		if (preselectedProperty?.operations && preselectedProperty.operations.length > 0) {
+			const operationType = preselectedProperty.operations[0].type.toLowerCase();
+			if (operationType.includes('rent') || operationType.includes('renta')) {
+				return 'rentar';
+			}
+			if (operationType.includes('sale') || operationType.includes('venta')) {
+				return 'comprar';
+			}
+		}
+		return '';
+	};
+
+	const [operationType, setOperationType] = useState<'rentar' | 'comprar' | ''>(getInitialOperationType());
 	const [resourceType, setResourceType] = useState('');
 	const [creditoPreaprobado, setCreditoPreaprobado] = useState<string>('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [errors, setErrors] = useState<Record<string, string>>({});
 	const [touched, setTouched] = useState<Record<string, boolean>>({});
-	const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
+	const [selectedPropertyId, setSelectedPropertyId] = useState<string>(preselectedProperty?.id || '');
 	const [properties, setProperties] = useState<Property[]>([]);
 	const [isLoadingProperties, setIsLoadingProperties] = useState(false);
 
@@ -47,11 +175,15 @@ export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack,
 					const easyBrokerData = await easyBrokerRes.json();
 					if (easyBrokerData.content) {
 						easyBrokerData.content.forEach((prop: any) => {
+							// Obtener precio de operations[0].amount
+							const price = prop.operations?.[0]?.amount || prop.price?.amount || prop.price || 0;
 							allProperties.push({
 								id: prop.public_id || prop.id,
 								title: prop.title,
-								address: prop.location || prop.address || 'Dirección no disponible',
-								price: prop.price?.amount || prop.price || 0,
+								address: typeof prop.location === 'string'
+									? prop.location
+									: prop.location?.address || prop.location?.city || prop.address || 'Dirección no disponible',
+								price: price,
 								property_type: prop.property_type || 'casa',
 							});
 						});
@@ -190,7 +322,7 @@ export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack,
 			phone: formData.get('phone') || '',
 			operationType: formData.get('operationType') || '',
 			notes: formData.get('notes') || '',
-			propertyId: selectedPropertyId || null,
+			propertyId: preselectedProperty?.id || selectedPropertyId || null,
 		};
 
 		if (operationType === 'rentar') {
@@ -340,33 +472,38 @@ export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack,
 					</div>
 				)}
 
-				{/* Selector de Propiedad (Opcional) */}
-				<div>
-					<label htmlFor="propertyId" class="block text-sm font-medium text-gray-700 mb-1.5">
-						Propiedad de interés <span class="text-gray-400 text-xs">(Opcional)</span>
-					</label>
-					<select
-						id="propertyId"
-						name="propertyId"
-						value={selectedPropertyId}
-						onChange={(e) => setSelectedPropertyId((e.target as HTMLSelectElement).value)}
-						class="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
-					>
-						<option value="">Seleccionar propiedad (opcional)</option>
-						{isLoadingProperties ? (
-							<option disabled>Cargando propiedades...</option>
-						) : (
-							properties.map((prop) => (
-								<option key={prop.id} value={prop.id}>
-									{prop.title} - {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(prop.price)}
-								</option>
-							))
-						)}
-					</select>
-					{properties.length === 0 && !isLoadingProperties && (
-						<p class="mt-1 text-xs text-gray-500">No hay propiedades disponibles</p>
-					)}
-				</div>
+				{/* Selector de Propiedad (Opcional) - Solo mostrar si no hay propiedad preseleccionada */}
+				{!preselectedProperty && (
+					<div>
+						<label htmlFor="propertyId" class="block text-sm font-medium text-gray-700 mb-1.5">
+							Propiedad de interés <span class="text-gray-400 text-xs">(Opcional)</span>
+						</label>
+						<PropertySelector
+							properties={properties}
+							selectedPropertyId={selectedPropertyId}
+							onPropertyChange={setSelectedPropertyId}
+							isLoading={isLoadingProperties}
+						/>
+					</div>
+				)}
+
+				{/* Mostrar propiedad preseleccionada */}
+				{preselectedProperty && (
+					<div class="bg-gray-50 border border-gray-200 rounded-md p-4">
+						<label class="block text-sm font-medium text-gray-700 mb-2">
+							Propiedad seleccionada
+						</label>
+						<div class="space-y-1">
+							<p class="text-sm font-semibold text-gray-900">{preselectedProperty.title}</p>
+							<p class="text-xs text-gray-600">{preselectedProperty.address}</p>
+							{preselectedProperty.price > 0 && (
+								<p class="text-sm font-medium text-gray-900">
+									{new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(preselectedProperty.price)}
+								</p>
+							)}
+						</div>
+					</div>
+				)}
 
 				{/* Nombre */}
 				<div>
@@ -441,55 +578,59 @@ export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack,
 					<label class="block text-sm font-medium text-gray-700 mb-2">
 						Tipo de operación <span class="text-red-500">*</span>
 					</label>
-					<div class="grid grid-cols-2 gap-3">
-						<label class={`flex items-center p-3 border-2 rounded-md cursor-pointer transition-all ${
-							operationType === 'rentar'
-								? 'border-gray-900 bg-gray-50'
-								: touched.operationType && errors.operationType
-								? 'border-red-300 bg-white'
-								: 'border-gray-200 hover:border-gray-300 bg-white'
-						}`}>
-							<input
-								type="radio"
-								name="operationType"
-								value="rentar"
-								checked={operationType === 'rentar'}
-								onChange={(e) => {
-									const target = e.target as HTMLInputElement;
-									if (target) {
-										setOperationType(target.value as 'rentar');
-										handleBlur('operationType');
-									}
-								}}
-								required
-								class="mr-2"
-							/>
-							<span class="font-medium text-gray-900">Rentar</span>
-						</label>
-						<label class={`flex items-center p-3 border-2 rounded-md cursor-pointer transition-all ${
-							operationType === 'comprar'
-								? 'border-gray-900 bg-gray-50'
-								: touched.operationType && errors.operationType
-								? 'border-red-300 bg-white'
-								: 'border-gray-200 hover:border-gray-300 bg-white'
-						}`}>
-							<input
-								type="radio"
-								name="operationType"
-								value="comprar"
-								checked={operationType === 'comprar'}
-								onChange={(e) => {
-									const target = e.target as HTMLInputElement;
-									if (target) {
-										setOperationType(target.value as 'comprar');
-										handleBlur('operationType');
-									}
-								}}
-								required
-								class="mr-2"
-							/>
-							<span class="font-medium text-gray-900">Comprar</span>
-						</label>
+					<div class={`grid gap-3 ${allowedOperationType ? 'grid-cols-1' : 'grid-cols-2'}`}>
+						{(!allowedOperationType || allowedOperationType === 'rentar') && (
+							<label class={`flex items-center p-3 border-2 rounded-md cursor-pointer transition-all ${
+								operationType === 'rentar'
+									? 'border-gray-900 bg-gray-50'
+									: touched.operationType && errors.operationType
+									? 'border-red-300 bg-white'
+									: 'border-gray-200 hover:border-gray-300 bg-white'
+							}`}>
+								<input
+									type="radio"
+									name="operationType"
+									value="rentar"
+									checked={operationType === 'rentar'}
+									onChange={(e) => {
+										const target = e.target as HTMLInputElement;
+										if (target) {
+											setOperationType(target.value as 'rentar');
+											handleBlur('operationType');
+										}
+									}}
+									required
+									class="mr-2"
+								/>
+								<span class="font-medium text-gray-900">Rentar</span>
+							</label>
+						)}
+						{(!allowedOperationType || allowedOperationType === 'comprar') && (
+							<label class={`flex items-center p-3 border-2 rounded-md cursor-pointer transition-all ${
+								operationType === 'comprar'
+									? 'border-gray-900 bg-gray-50'
+									: touched.operationType && errors.operationType
+									? 'border-red-300 bg-white'
+									: 'border-gray-200 hover:border-gray-300 bg-white'
+							}`}>
+								<input
+									type="radio"
+									name="operationType"
+									value="comprar"
+									checked={operationType === 'comprar'}
+									onChange={(e) => {
+										const target = e.target as HTMLInputElement;
+										if (target) {
+											setOperationType(target.value as 'comprar');
+											handleBlur('operationType');
+										}
+									}}
+									required
+									class="mr-2"
+								/>
+								<span class="font-medium text-gray-900">Comprar</span>
+							</label>
+						)}
 					</div>
 					{touched.operationType && errors.operationType && (
 						<p class="mt-2 text-sm text-red-600">{errors.operationType}</p>
