@@ -117,11 +117,18 @@ export default function LoginForm() {
 					localStorage.removeItem('remembered_email');
 				}
 
+				// Guardar token de acceso en localStorage para que el middleware lo pueda verificar
+				if (data.session.access_token) {
+					localStorage.setItem('sb-access-token', data.session.access_token);
+				}
+
 				setIsSuccess(true);
-				// Redirigir al CRM después de un breve delay con transición suave
+				
+				// Redirigir al CRM después de un breve delay
 				setTimeout(() => {
-					window.location.href = '/crm/crmdashboard';
-				}, 800);
+					// Usar window.location.replace para evitar que el usuario pueda volver atrás
+					window.location.replace('/crm/crmdashboard');
+				}, 500);
 			}
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Error desconocido');

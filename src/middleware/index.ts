@@ -1,16 +1,17 @@
 import { defineMiddleware } from 'astro:middleware';
 import type { MiddlewareHandler } from 'astro';
+import { supabaseAuth } from '../core/config/auth';
 
 /**
  * Middleware de autenticación
  * Verifica si el usuario está autenticado para rutas protegidas
  */
 const authMiddleware: MiddlewareHandler = async (context, next) => {
-	const { url, cookies } = context;
+	const { url, request } = context;
 	const pathname = url.pathname;
 
 	// Rutas públicas que no requieren autenticación
-	const publicRoutes = ['/login', '/citas', '/api/appointments', '/api/appointments/available'];
+	const publicRoutes = ['/login', '/citas', '/api/appointments', '/api/appointments/available', '/api/auth'];
 	const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
 
 	// Rutas protegidas (requieren autenticación)
@@ -19,17 +20,45 @@ const authMiddleware: MiddlewareHandler = async (context, next) => {
 
 	// Si es una ruta protegida, verificar autenticación
 	if (isProtectedRoute && !isPublicRoute) {
-		// Verificar token de sesión en cookies
-		const sessionToken = cookies.get('sb-access-token')?.value;
-		
-		if (!sessionToken) {
-			// Redirigir al login si no hay sesión
-			return new Response(null, {
-				status: 302,
-				headers: {
-					Location: '/login',
-				},
-			});
+		try {
+			// Obtener el token del header Authorization o cookies
+			const authHeader = request.headers.get('Authorization');
+			const cookies = request.headers.get('Cookie') || '';
+			
+			// Intentar obtener sesión de Supabase
+			const { data: { session }, error } = await supabaseAuth.auth.getSession();
+			
+			if (error || !session) {
+				// Redirigir al login si no hay sesión válida
+				if (pathname.startsWith('/crm')) {
+					return new Response(null, {
+						status: 302,
+						headers: {
+							Location: '/login',
+						},
+					});
+				}
+				
+				// Para API routes, retornar error 401
+				return new Response(
+					JSON.stringify({ error: 'No autenticado' }),
+					{
+						status: 401,
+						headers: { 'Content-Type': 'application/json' },
+					}
+				);
+			}
+		} catch (error) {
+			console.error('Error en middleware de autenticación:', error);
+			// En caso de error, redirigir al login
+			if (pathname.startsWith('/crm')) {
+				return new Response(null, {
+					status: 302,
+					headers: {
+						Location: '/login',
+					},
+				});
+			}
 		}
 	}
 
@@ -63,12 +92,18 @@ const corsMiddleware: MiddlewareHandler = async (context, next) => {
  * Ejecuta middlewares en secuencia
  */
 export const onRequest = defineMiddleware(async (context, next) => {
-	// Ejecutar CORS primero
-	const corsResponse = await corsMiddleware(context, async () => {
-		// Luego ejecutar autenticación
-		const authResponse = await authMiddleware(context, next);
-		return authResponse;
+	const { url } = context;
+	
+	// Para rutas de login, permitir acceso sin verificación
+	if (url.pathname === '/login') {
+		return next();
+	}
+	
+	// Ejecutar autenticación primero para rutas protegidas
+	const authResponse = await authMiddleware(context, async () => {
+		// Luego ejecutar CORS para API routes
+		return await corsMiddleware(context, next);
 	});
 
-	return corsResponse;
+	return authResponse;
 });
