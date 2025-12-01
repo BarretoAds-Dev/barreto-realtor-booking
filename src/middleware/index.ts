@@ -1,67 +1,16 @@
 import { defineMiddleware } from 'astro:middleware';
 import type { MiddlewareHandler } from 'astro';
-import { supabaseAuth } from '../core/config/auth';
 
 /**
  * Middleware de autenticación
- * Verifica si el usuario está autenticado para rutas protegidas
+ * Permite que todas las rutas se carguen
+ * La verificación de autenticación se hace en el cliente (componentes)
+ * Esto permite que la redirección después del login funcione correctamente
  */
 const authMiddleware: MiddlewareHandler = async (context, next) => {
-	const { url, request } = context;
-	const pathname = url.pathname;
-
-	// Rutas públicas que no requieren autenticación
-	const publicRoutes = ['/login', '/citas', '/api/appointments', '/api/appointments/available', '/api/auth'];
-	const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
-
-	// Rutas protegidas (requieren autenticación)
-	const protectedRoutes = ['/crm', '/api/crm'];
-	const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
-
-	// Si es una ruta protegida, verificar autenticación
-	if (isProtectedRoute && !isPublicRoute) {
-		try {
-			// Obtener el token del header Authorization o cookies
-			const authHeader = request.headers.get('Authorization');
-			const cookies = request.headers.get('Cookie') || '';
-			
-			// Intentar obtener sesión de Supabase
-			const { data: { session }, error } = await supabaseAuth.auth.getSession();
-			
-			if (error || !session) {
-				// Redirigir al login si no hay sesión válida
-				if (pathname.startsWith('/crm')) {
-					return new Response(null, {
-						status: 302,
-						headers: {
-							Location: '/login',
-						},
-					});
-				}
-				
-				// Para API routes, retornar error 401
-				return new Response(
-					JSON.stringify({ error: 'No autenticado' }),
-					{
-						status: 401,
-						headers: { 'Content-Type': 'application/json' },
-					}
-				);
-			}
-		} catch (error) {
-			console.error('Error en middleware de autenticación:', error);
-			// En caso de error, redirigir al login
-			if (pathname.startsWith('/crm')) {
-				return new Response(null, {
-					status: 302,
-					headers: {
-						Location: '/login',
-					},
-				});
-			}
-		}
-	}
-
+	// Permitir que todas las rutas se carguen
+	// La verificación de autenticación se hace en el cliente
+	// Esto permite que la redirección después del login funcione correctamente
 	return next();
 };
 
