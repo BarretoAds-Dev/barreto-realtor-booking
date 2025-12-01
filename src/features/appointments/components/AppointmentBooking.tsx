@@ -4,7 +4,7 @@ import Calendar from './Calendar';
 import TimeSlots from './TimeSlots';
 import AppointmentForm from './AppointmentForm';
 import ConfirmationPanel from './ConfirmationPanel.astro';
-import ProgressIndicator from './ProgressIndicator.astro';
+import ProgressIndicator from './ProgressIndicator';
 import type { AvailableSlot, AppointmentConfig, AppointmentStep } from '../types';
 
 type Step = AppointmentStep;
