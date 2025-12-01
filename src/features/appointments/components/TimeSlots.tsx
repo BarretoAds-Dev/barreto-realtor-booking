@@ -75,15 +75,15 @@ export default function TimeSlots({ selectedDate, selectedTime, slots, onTimeSel
 				{/* Leyenda de colores */}
 				<div className="flex flex-wrap gap-4 mb-4 text-xs text-gray-600">
 					<div className="flex items-center gap-2">
-						<div className="w-4 h-4 bg-white border-2 border-gray-900 rounded"></div>
+						<div className="w-4 h-4 bg-green-50 border-2 border-green-200 rounded"></div>
 						<span>Disponible</span>
 					</div>
 					<div className="flex items-center gap-2">
-						<div className="w-4 h-4 bg-gray-100 border-2 border-gray-300 rounded"></div>
+						<div className="w-4 h-4 bg-red-50 border-2 border-red-200 rounded"></div>
 						<span>Ocupado</span>
 					</div>
 					<div className="flex items-center gap-2">
-						<div className="w-4 h-4 bg-gray-100 border-2 border-gray-200 rounded"></div>
+						<div className="w-4 h-4 bg-gray-50 border-2 border-gray-200 rounded"></div>
 						<span>No disponible</span>
 					</div>
 				</div>
@@ -95,20 +95,20 @@ export default function TimeSlots({ selectedDate, selectedTime, slots, onTimeSel
 						const remaining = slot.capacity - slot.booked;
 						const isClickable = status === 'available';
 						
-						// Colores según el estado (estilo CRM)
+						// Colores según el estado (estilo CRM con verde claro para disponibles)
 						let baseClasses = '';
 						let selectedClasses = '';
 						
 						if (status === 'available') {
-							// Disponible: blanco con borde gris
-							baseClasses = 'bg-white border-gray-200 text-gray-900 hover:bg-gray-50 hover:border-gray-900';
+							// Disponible: verde claro
+							baseClasses = 'bg-green-50 border-green-200 text-gray-900 hover:bg-green-100 hover:border-green-300';
 							selectedClasses = 'bg-gray-900 border-gray-900 text-white scale-105 shadow-md';
 						} else if (status === 'occupied') {
-							// Ocupado: gris claro
-							baseClasses = 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed';
-							selectedClasses = 'bg-gray-200 border-gray-300';
+							// Ocupado: rojo/rosa claro
+							baseClasses = 'bg-red-50 border-red-200 text-gray-600 cursor-not-allowed';
+							selectedClasses = 'bg-red-100 border-red-300';
 						} else {
-							// Deshabilitado: gris más claro
+							// Deshabilitado: gris claro
 							baseClasses = 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed';
 							selectedClasses = 'bg-gray-100 border-gray-200';
 						}
@@ -120,13 +120,13 @@ export default function TimeSlots({ selectedDate, selectedTime, slots, onTimeSel
 								disabled={!isClickable}
 								onClick={() => isClickable && onTimeSelect(slot.time)}
 								className={`
-									py-3 px-4 text-sm font-semibold transition-all duration-200 relative
+									py-3 px-4 text-sm font-bold transition-all duration-200 relative
 									border rounded-lg
 									${isSelected && isClickable
 										? selectedClasses
 										: baseClasses
 									}
-									${isClickable ? 'hover:scale-105 active:scale-95' : ''}
+									${isClickable ? 'hover:scale-105 active:scale-95 shadow-sm hover:shadow-md' : ''}
 								`}
 								title={
 									status === 'available' 
@@ -139,11 +139,6 @@ export default function TimeSlots({ selectedDate, selectedTime, slots, onTimeSel
 								{slot.time}
 								{status === 'occupied' && (
 									<span className="absolute top-1 right-1 text-xs">🔒</span>
-								)}
-								{status === 'available' && remaining < slot.capacity && (
-									<span className="absolute top-1 right-1 text-xs">
-										{remaining}/{slot.capacity}
-									</span>
 								)}
 							</button>
 						);
