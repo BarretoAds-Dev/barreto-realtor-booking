@@ -49,7 +49,7 @@ export default function AppointmentBooking({ availableSlots: initialAvailableSlo
 			endDate.setMonth(endDate.getMonth() + 6);
 			const endDateStr = endDate.toISOString().split('T')[0];
 			
-			const response = await fetch(`/api/availability?start=${startDate}&end=${endDateStr}`);
+			const response = await fetch(`/api/appointments/available?start=${startDate}&end=${endDateStr}`);
 			if (response.ok) {
 				const refreshedSlots = await response.json();
 				setAvailableSlots(refreshedSlots);

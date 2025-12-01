@@ -70,6 +70,11 @@ export default function CRMApp() {
 	// Filtrar citas según la búsqueda y filtros avanzados
 	const filteredAppointments = useMemo(() => {
 		let filtered = [...appointments];
+		
+		console.log('🔍 Filtering appointments. Total:', appointments.length);
+		console.log('📋 Search query:', searchQuery);
+		console.log('📋 Advanced filters:', advancedFilters);
+		console.log('📋 Status filter:', statusFilter);
 
 		// Aplicar búsqueda rápida
 		if (searchQuery.trim()) {
@@ -82,6 +87,7 @@ export default function CRMApp() {
 				
 				return nameMatch || emailMatch || phoneMatch || propertyMatch;
 			});
+			console.log('🔍 After search filter:', filtered.length);
 		}
 
 		// Aplicar filtros avanzados
@@ -171,8 +177,9 @@ export default function CRMApp() {
 			}
 		}
 
+		console.log('✅ Final filtered appointments:', filtered.length);
 		return filtered;
-	}, [appointments, searchQuery, advancedFilters]);
+	}, [appointments, searchQuery, advancedFilters, statusFilter]);
 
 	const fetchAppointments = async () => {
 		setIsLoading(true);
