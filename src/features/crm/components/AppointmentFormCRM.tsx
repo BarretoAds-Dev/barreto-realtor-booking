@@ -1,5 +1,5 @@
 /** @jsxImportSource preact */
-import { useState } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { validateAppointmentClient } from '../../../core/utils/validation';
 
 type AppointmentFormData = any;
@@ -11,6 +11,14 @@ interface AppointmentFormCRMProps {
 	onSubmit: (data: AppointmentFormData) => void;
 }
 
+interface Property {
+	id: string;
+	title: string;
+	address: string;
+	price: number;
+	property_type: string;
+}
+
 export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack, onSubmit }: AppointmentFormCRMProps) {
 	const [operationType, setOperationType] = useState<'rentar' | 'comprar' | ''>('');
 	const [resourceType, setResourceType] = useState('');
@@ -18,6 +26,63 @@ export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack,
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [errors, setErrors] = useState<Record<string, string>>({});
 	const [touched, setTouched] = useState<Record<string, boolean>>({});
+	const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
+	const [properties, setProperties] = useState<Property[]>([]);
+	const [isLoadingProperties, setIsLoadingProperties] = useState(false);
+
+	// Cargar propiedades disponibles
+	useEffect(() => {
+		const loadProperties = async () => {
+			setIsLoadingProperties(true);
+			try {
+				// Cargar de Easy Broker y Supabase
+				const [easyBrokerRes, supabaseRes] = await Promise.all([
+					fetch('/api/easybroker/properties?limit=100').catch(() => null),
+					fetch('/api/properties').catch(() => null),
+				]);
+
+				const allProperties: Property[] = [];
+
+				if (easyBrokerRes?.ok) {
+					const easyBrokerData = await easyBrokerRes.json();
+					if (easyBrokerData.content) {
+						easyBrokerData.content.forEach((prop: any) => {
+							allProperties.push({
+								id: prop.public_id || prop.id,
+								title: prop.title,
+								address: prop.location || prop.address || 'Dirección no disponible',
+								price: prop.price?.amount || prop.price || 0,
+								property_type: prop.property_type || 'casa',
+							});
+						});
+					}
+				}
+
+				if (supabaseRes?.ok) {
+					const supabaseData = await supabaseRes.json();
+					if (supabaseData.properties) {
+						supabaseData.properties.forEach((prop: any) => {
+							allProperties.push({
+								id: prop.id,
+								title: prop.title,
+								address: prop.address,
+								price: prop.price,
+								property_type: prop.property_type || 'casa',
+							});
+						});
+					}
+				}
+
+				setProperties(allProperties);
+			} catch (error) {
+				console.error('Error al cargar propiedades:', error);
+			} finally {
+				setIsLoadingProperties(false);
+			}
+		};
+
+		loadProperties();
+	}, []);
 
 	const validateField = (name: string, value: any) => {
 		const form = document.getElementById('appointmentFormCRM') as HTMLFormElement;
@@ -40,7 +105,7 @@ export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack,
 		} else if (operationType === 'comprar') {
 			data.budgetComprar = formData.get('budgetComprar') || '';
 			data.resourceType = formData.get('resourceType') || '';
-			
+
 			if (resourceType === 'credito-bancario') {
 				data.banco = formData.get('banco') || '';
 				data.creditoPreaprobado = formData.get('creditoPreaprobado') || '';
@@ -114,9 +179,9 @@ export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack,
 
 		const form = e.target as HTMLFormElement;
 		const formData = new FormData(form);
-		
+
 		const dateStr = formatDateLocal(selectedDate);
-		
+
 		const appointmentData: any = {
 			date: dateStr,
 			time: selectedTime,
@@ -124,7 +189,8 @@ export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack,
 			email: formData.get('email') || '',
 			phone: formData.get('phone') || '',
 			operationType: formData.get('operationType') || '',
-			notes: formData.get('notes') || ''
+			notes: formData.get('notes') || '',
+			propertyId: selectedPropertyId || null,
 		};
 
 		if (operationType === 'rentar') {
@@ -133,7 +199,7 @@ export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack,
 		} else if (operationType === 'comprar') {
 			appointmentData.budgetComprar = formData.get('budgetComprar') || '';
 			appointmentData.resourceType = formData.get('resourceType') || '';
-			
+
 			if (resourceType === 'credito-bancario') {
 				appointmentData.banco = formData.get('banco') || '';
 				appointmentData.creditoPreaprobado = formData.get('creditoPreaprobado') || '';
@@ -147,7 +213,7 @@ export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack,
 		}
 
 		const validation = validateAppointmentClient(appointmentData);
-		
+
 		if (!validation.success) {
 			const validationErrors = validation.errors || {};
 			const filteredErrors: Record<string, string> = {};
@@ -156,7 +222,7 @@ export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack,
 					filteredErrors[key] = String(value);
 				}
 			});
-			
+
 			setErrors(filteredErrors);
 			setIsSubmitting(false);
 			const allFields = Object.keys(filteredErrors);
@@ -165,7 +231,7 @@ export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack,
 				touchedFields[field] = true;
 			});
 			setTouched(touchedFields);
-			
+
 			if (allFields.length > 0) {
 				const firstErrorField = document.querySelector(`[name="${allFields[0]}"]`);
 				if (firstErrorField) {
@@ -192,10 +258,10 @@ export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack,
 
 			if (!response.ok) {
 				console.error('Error del servidor:', result);
-				const errorMessage = result.details 
+				const errorMessage = result.details
 					? `${result.error}: ${result.details}`
 					: result.error || 'Error al crear la cita. Por favor intenta nuevamente.';
-				
+
 				setErrors({
 					general: errorMessage,
 				});
@@ -273,7 +339,35 @@ export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack,
 						</ul>
 					</div>
 				)}
-				
+
+				{/* Selector de Propiedad (Opcional) */}
+				<div>
+					<label htmlFor="propertyId" class="block text-sm font-medium text-gray-700 mb-1.5">
+						Propiedad de interés <span class="text-gray-400 text-xs">(Opcional)</span>
+					</label>
+					<select
+						id="propertyId"
+						name="propertyId"
+						value={selectedPropertyId}
+						onChange={(e) => setSelectedPropertyId((e.target as HTMLSelectElement).value)}
+						class="w-full px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
+					>
+						<option value="">Seleccionar propiedad (opcional)</option>
+						{isLoadingProperties ? (
+							<option disabled>Cargando propiedades...</option>
+						) : (
+							properties.map((prop) => (
+								<option key={prop.id} value={prop.id}>
+									{prop.title} - {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(prop.price)}
+								</option>
+							))
+						)}
+					</select>
+					{properties.length === 0 && !isLoadingProperties && (
+						<p class="mt-1 text-xs text-gray-500">No hay propiedades disponibles</p>
+					)}
+				</div>
+
 				{/* Nombre */}
 				<div>
 					<label htmlFor="name" class="block text-sm font-medium text-gray-700 mb-1.5">
@@ -351,7 +445,7 @@ export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack,
 						<label class={`flex items-center p-3 border-2 rounded-md cursor-pointer transition-all ${
 							operationType === 'rentar'
 								? 'border-gray-900 bg-gray-50'
-								: touched.operationType && errors.operationType 
+								: touched.operationType && errors.operationType
 								? 'border-red-300 bg-white'
 								: 'border-gray-200 hover:border-gray-300 bg-white'
 						}`}>
@@ -375,7 +469,7 @@ export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack,
 						<label class={`flex items-center p-3 border-2 rounded-md cursor-pointer transition-all ${
 							operationType === 'comprar'
 								? 'border-gray-900 bg-gray-50'
-								: touched.operationType && errors.operationType 
+								: touched.operationType && errors.operationType
 								? 'border-red-300 bg-white'
 								: 'border-gray-200 hover:border-gray-300 bg-white'
 						}`}>
@@ -576,7 +670,7 @@ export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack,
 										<label class={`flex items-center p-3 border-2 rounded-md cursor-pointer transition-all ${
 											creditoPreaprobado === 'si'
 												? 'border-gray-900 bg-gray-50'
-												: touched.creditoPreaprobado && errors.creditoPreaprobado 
+												: touched.creditoPreaprobado && errors.creditoPreaprobado
 												? 'border-red-300 bg-white'
 												: 'border-gray-200 hover:border-gray-300 bg-white'
 										}`}>
@@ -597,7 +691,7 @@ export default function AppointmentFormCRM({ selectedDate, selectedTime, onBack,
 										<label class={`flex items-center p-3 border-2 rounded-md cursor-pointer transition-all ${
 											creditoPreaprobado === 'no'
 												? 'border-gray-900 bg-gray-50'
-												: touched.creditoPreaprobado && errors.creditoPreaprobado 
+												: touched.creditoPreaprobado && errors.creditoPreaprobado
 												? 'border-red-300 bg-white'
 												: 'border-gray-200 hover:border-gray-300 bg-white'
 										}`}>

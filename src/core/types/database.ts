@@ -36,6 +36,7 @@ export type Database = {
 					id: string;
 					agent_id: string;
 					slot_id: string | null;
+					property_id: string | null;
 					client_name: string;
 					client_email: string;
 					client_phone: string | null;

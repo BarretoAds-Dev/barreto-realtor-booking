@@ -20,6 +20,24 @@ const searchQueryState = signal<string>('');
 const selectedTypeState = signal<string>('todos');
 const currentPageState = signal<number>(1);
 const totalPagesState = signal<number>(1);
+// Filtros avanzados
+const advancedFiltersState = signal<{
+	minPrice: number | null;
+	maxPrice: number | null;
+	minBedrooms: number | null;
+	maxBedrooms: number | null;
+	minBathrooms: number | null;
+	maxBathrooms: number | null;
+	location: string;
+}>({
+	minPrice: null,
+	maxPrice: null,
+	minBedrooms: null,
+	maxBedrooms: null,
+	minBathrooms: null,
+	maxBathrooms: null,
+	location: '',
+});
 
 /**
  * Computed: propiedades filtradas por tipo
@@ -42,29 +60,92 @@ const filteredProperties = computed(() => {
 });
 
 /**
- * Computed: propiedades filtradas por búsqueda y paginadas
+ * Computed: propiedades filtradas por búsqueda, filtros avanzados y paginadas
  */
 const searchedProperties = computed(() => {
   const query = searchQueryState.value.toLowerCase().trim();
+  const advancedFilters = advancedFiltersState.value;
   let filtered = filteredProperties.value;
 
+  // Filtro por búsqueda de texto
   if (query) {
-    filtered = filteredProperties.value.filter((prop) => {
+    filtered = filtered.filter((prop) => {
       const title = prop.title.toLowerCase();
-      const address = prop.location.address?.toLowerCase() || '';
-      const city = prop.location.city.toLowerCase();
-      const neighborhood = prop.location.neighborhood?.toLowerCase() || '';
+      // location puede ser string o objeto
+      const locationStr =
+        typeof prop.location === 'string'
+          ? prop.location.toLowerCase()
+          : `${prop.location.city || ''} ${prop.location.state || ''} ${prop.location.neighborhood || ''} ${prop.location.address || ''}`.toLowerCase();
       const description = prop.description?.toLowerCase() || '';
 
       return (
         title.includes(query) ||
-        address.includes(query) ||
-        city.includes(query) ||
-        neighborhood.includes(query) ||
+        locationStr.includes(query) ||
         description.includes(query)
       );
     });
   }
+
+  // Aplicar filtros avanzados
+  filtered = filtered.filter((prop) => {
+    // Filtro por precio
+    const price = prop.operations[0]?.amount;
+    if (price !== undefined) {
+      if (advancedFilters.minPrice !== null && price < advancedFilters.minPrice) {
+        return false;
+      }
+      if (advancedFilters.maxPrice !== null && price > advancedFilters.maxPrice) {
+        return false;
+      }
+    }
+
+    // Filtro por ubicación
+    if (advancedFilters.location.trim()) {
+      const locationStr =
+        typeof prop.location === 'string'
+          ? prop.location.toLowerCase()
+          : `${prop.location.city || ''} ${prop.location.state || ''} ${prop.location.neighborhood || ''} ${prop.location.address || ''}`.toLowerCase();
+      if (!locationStr.includes(advancedFilters.location.toLowerCase())) {
+        return false;
+      }
+    }
+
+    // Filtro por recámaras
+    const bedrooms = prop.features.bedrooms;
+    if (bedrooms !== null && bedrooms !== undefined) {
+      if (
+        advancedFilters.minBedrooms !== null &&
+        bedrooms < advancedFilters.minBedrooms
+      ) {
+        return false;
+      }
+      if (
+        advancedFilters.maxBedrooms !== null &&
+        bedrooms > advancedFilters.maxBedrooms
+      ) {
+        return false;
+      }
+    }
+
+    // Filtro por baños
+    const bathrooms = prop.features.bathrooms;
+    if (bathrooms !== null && bathrooms !== undefined) {
+      if (
+        advancedFilters.minBathrooms !== null &&
+        bathrooms < advancedFilters.minBathrooms
+      ) {
+        return false;
+      }
+      if (
+        advancedFilters.maxBathrooms !== null &&
+        bathrooms > advancedFilters.maxBathrooms
+      ) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 
   // Calcular total de páginas
   const itemsPerPage = 6;
@@ -114,6 +195,31 @@ export function useProperties() {
       if (filters.search?.property_types?.length) {
         filters.search.property_types.forEach((type) => {
           params.append('property_types[]', type);
+        });
+      }
+
+      // Agregar filtros avanzados
+      if (filters.search?.min_price !== undefined) {
+        params.append('min_price', filters.search.min_price.toString());
+      }
+      if (filters.search?.max_price !== undefined) {
+        params.append('max_price', filters.search.max_price.toString());
+      }
+      if (filters.search?.min_bedrooms !== undefined) {
+        params.append('min_bedrooms', filters.search.min_bedrooms.toString());
+      }
+      if (filters.search?.max_bedrooms !== undefined) {
+        params.append('max_bedrooms', filters.search.max_bedrooms.toString());
+      }
+      if (filters.search?.min_bathrooms !== undefined) {
+        params.append('min_bathrooms', filters.search.min_bathrooms.toString());
+      }
+      if (filters.search?.max_bathrooms !== undefined) {
+        params.append('max_bathrooms', filters.search.max_bathrooms.toString());
+      }
+      if (filters.search?.locations?.length) {
+        filters.search.locations.forEach((location) => {
+          params.append('locations[]', location);
         });
       }
 
@@ -244,6 +350,64 @@ export function useProperties() {
     };
   };
 
+  const setAdvancedFilters = (filters: {
+    minPrice: number | null;
+    maxPrice: number | null;
+    minBedrooms: number | null;
+    maxBedrooms: number | null;
+    minBathrooms: number | null;
+    maxBathrooms: number | null;
+    location: string;
+  }): void => {
+    advancedFiltersState.value = filters;
+    resetPagination();
+    // Actualizar filtros de API también
+    setFilters({
+      search: {
+        ...filtersState.value.search,
+        min_price: filters.minPrice ?? undefined,
+        max_price: filters.maxPrice ?? undefined,
+        min_bedrooms: filters.minBedrooms ?? undefined,
+        max_bedrooms: filters.maxBedrooms ?? undefined,
+        min_bathrooms: filters.minBathrooms ?? undefined,
+        max_bathrooms: filters.maxBathrooms ?? undefined,
+        locations: filters.location.trim()
+          ? [filters.location.trim()]
+          : undefined,
+      },
+    });
+    // Recargar propiedades con nuevos filtros
+    fetchProperties();
+  };
+
+  const resetAdvancedFilters = (): void => {
+    advancedFiltersState.value = {
+      minPrice: null,
+      maxPrice: null,
+      minBedrooms: null,
+      maxBedrooms: null,
+      minBathrooms: null,
+      maxBathrooms: null,
+      location: '',
+    };
+    resetPagination();
+    // Limpiar filtros de API
+    setFilters({
+      search: {
+        ...filtersState.value.search,
+        min_price: undefined,
+        max_price: undefined,
+        min_bedrooms: undefined,
+        max_bedrooms: undefined,
+        min_bathrooms: undefined,
+        max_bathrooms: undefined,
+        locations: undefined,
+      },
+    });
+    // Recargar propiedades sin filtros
+    fetchProperties();
+  };
+
   const setCurrentPage = (page: number): void => {
     currentPageState.value = Math.max(1, Math.min(page, totalPagesState.value));
   };
@@ -275,11 +439,14 @@ export function useProperties() {
     selectedType: selectedTypeState,
     currentPage: currentPageState,
     totalPages: totalPagesState,
+    advancedFilters: advancedFiltersState,
     // Métodos
     fetchProperties,
     setSearchQuery,
     setSelectedType,
     setFilters,
+    setAdvancedFilters,
+    resetAdvancedFilters,
     setCurrentPage,
     goToNextPage,
     goToPreviousPage,

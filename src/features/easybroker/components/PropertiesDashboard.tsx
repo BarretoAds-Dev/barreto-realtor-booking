@@ -3,6 +3,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { useProperties } from '../hooks/useProperties';
 import { PropertyCard } from './PropertyCard';
 import { PropertyFilters } from './PropertyFilters';
+import { AdvancedFilters } from './AdvancedFilters';
 import { CreatePropertyModal } from './CreatePropertyModal';
 import { PropertyAppointmentModal } from './PropertyAppointmentModal';
 import { getEasyBrokerPropertyUrl } from '../../../core/utils/easybroker-url';
@@ -34,9 +35,12 @@ export function PropertiesDashboard({
 		selectedType,
 		currentPage,
 		totalPages,
+		advancedFilters,
 		fetchProperties,
 		setSearchQuery,
 		setSelectedType,
+		setAdvancedFilters,
+		resetAdvancedFilters,
 		setCurrentPage,
 		goToNextPage,
 		goToPreviousPage,
@@ -98,6 +102,21 @@ export function PropertiesDashboard({
 					searchQuery={searchQuery.value}
 					onTypeChange={setSelectedType}
 					onSearchChange={setSearchQuery}
+				/>
+
+				{/* Filtros Avanzados (reemplaza el buscador) */}
+				<AdvancedFilters
+					minPrice={advancedFilters.value.minPrice}
+					maxPrice={advancedFilters.value.maxPrice}
+					minBedrooms={advancedFilters.value.minBedrooms}
+					maxBedrooms={advancedFilters.value.maxBedrooms}
+					minBathrooms={advancedFilters.value.minBathrooms}
+					maxBathrooms={advancedFilters.value.maxBathrooms}
+					location={advancedFilters.value.location}
+					searchQuery={searchQuery.value}
+					onFiltersChange={setAdvancedFilters}
+					onSearchChange={setSearchQuery}
+					onReset={resetAdvancedFilters}
 				/>
 
 				{/* Contenido */}

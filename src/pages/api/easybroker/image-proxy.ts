@@ -3,74 +3,71 @@ import type { APIRoute } from 'astro';
 export const prerender = false;
 
 /**
- * GET /api/easybroker/image-proxy
- * Proxy para imágenes de Easy Broker que evita problemas de CORS
- *
- * Query params:
- * - url: URL de la imagen a obtener (debe estar codificada)
+ * Proxy para imágenes de EasyBroker
+ * Evita errores CORS al cargar imágenes desde dominios externos
  */
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ request }) => {
 	try {
+		const url = new URL(request.url);
 		const imageUrl = url.searchParams.get('url');
 
 		if (!imageUrl) {
-			return new Response('URL de imagen requerida', {
-				status: 400,
-				headers: { 'Content-Type': 'text/plain' },
-			});
+			return new Response('URL parameter is required', { status: 400 });
 		}
 
 		// Decodificar la URL
 		const decodedUrl = decodeURIComponent(imageUrl);
 
-		// Validar que sea una URL de Easy Broker
-		if (!decodedUrl.includes('easybroker.com') && !decodedUrl.includes('ebimg')) {
-			return new Response('URL no válida', {
-				status: 400,
-				headers: { 'Content-Type': 'text/plain' },
-			});
+		// Validar que sea una URL de EasyBroker
+		const allowedDomains = [
+			'easybroker.com',
+			'ebimg.com',
+			'cloudfront.net', // CDN de EasyBroker
+		];
+
+		const isAllowed = allowedDomains.some((domain) =>
+			decodedUrl.includes(domain)
+		);
+
+		if (!isAllowed) {
+			return new Response('Invalid image URL domain', { status: 403 });
 		}
 
-		// Obtener la imagen desde Easy Broker
+		console.log('🖼️  Proxying image:', decodedUrl);
+
+		// Hacer fetch de la imagen
 		const response = await fetch(decodedUrl, {
 			headers: {
-				'Referer': 'https://www.easybroker.com/',
-				'User-Agent': 'Mozilla/5.0 (compatible; EasyBroker-Proxy/1.0)',
+				'User-Agent': 'Mozilla/5.0 (compatible; InmoCRM/1.0)',
+				Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+				Referer: 'https://www.easybroker.com/',
 			},
 		});
 
 		if (!response.ok) {
-			return new Response('Error al obtener la imagen', {
+			console.error('❌ Error fetching image:', response.status);
+			return new Response('Failed to fetch image', {
 				status: response.status,
-				headers: { 'Content-Type': 'text/plain' },
 			});
 		}
 
-		// Obtener el tipo de contenido de la imagen
-		const contentType = response.headers.get('Content-Type') || 'image/jpeg';
+		// Obtener el contenido de la imagen
 		const imageBuffer = await response.arrayBuffer();
+		const contentType =
+			response.headers.get('content-type') || 'image/jpeg';
 
 		// Retornar la imagen con headers apropiados
 		return new Response(imageBuffer, {
 			status: 200,
 			headers: {
 				'Content-Type': contentType,
-				'Cache-Control': 'public, max-age=31536000, immutable',
+				'Cache-Control': 'public, max-age=31536000, immutable', // Cache 1 año
 				'Access-Control-Allow-Origin': '*',
 			},
 		});
 	} catch (error) {
-		console.error('❌ Error en proxy de imagen:', error);
-		return new Response(
-			JSON.stringify({
-				error: 'Error al obtener la imagen',
-				message: error instanceof Error ? error.message : 'Error desconocido',
-			}),
-			{
-				status: 500,
-				headers: { 'Content-Type': 'application/json' },
-			}
-		);
+		console.error('❌ Error in image proxy:', error);
+		return new Response('Internal server error', { status: 500 });
 	}
 };
 

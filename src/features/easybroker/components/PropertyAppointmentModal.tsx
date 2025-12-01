@@ -96,13 +96,20 @@ export function PropertyAppointmentModal({
 	};
 
 	const handleFormSubmit = async (data: any): Promise<void> => {
+		// Determinar el ID correcto de la propiedad
+		// Si tiene 'id' (propiedad de Supabase), usar ese
+		// Si tiene 'public_id' (propiedad de Easy Broker), necesitamos buscar el ID de Supabase o usar null
+		// Por ahora, usamos null y dejamos que el sistema maneje la relación por título
+		const propertyId = property && 'id' in property && typeof property.id === 'string'
+			? property.id
+			: null;
+
 		// Agregar información de la propiedad a los datos de la cita
 		const appointmentData = {
 			...data,
-			property: property?.title || '',
-			propertyId: property?.public_id || '',
+			propertyId: propertyId,
 			notes: property
-				? `${data.notes || ''}\n\nPropiedad: ${property.title}\nID: ${property.public_id}`.trim()
+				? `${data.notes || ''}\n\nPropiedad: ${property.title}${property.location ? `\nDirección: ${property.location}` : ''}`.trim()
 				: data.notes,
 		};
 

@@ -1,12 +1,24 @@
 /** @jsxImportSource preact */
 import { useState, useEffect } from 'preact/hooks';
 
+interface Property {
+	id: string;
+	title: string;
+	address: string;
+	price: number;
+	propertyType: string;
+	bedrooms: number | null;
+	bathrooms: number | null;
+	area: number | null;
+}
+
 interface Appointment {
 	id: string;
 	clientName: string;
 	clientEmail: string;
 	clientPhone: string | null;
-	property: string | null;
+	propertyId: string | null;
+	property: Property | string | null; // Puede ser objeto Property o string (legacy)
 	date: string;
 	time: string;
 	status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no-show';
@@ -44,7 +56,7 @@ export default function AppointmentsTable({ appointments, isLoading, onStatusCha
 
 			if (!response.ok) {
 				const errorData = await response.json();
-				const errorMsg = errorData.details 
+				const errorMsg = errorData.details
 					? `${errorData.error}: ${errorData.details}`
 					: errorData.error || errorData.message || 'Error desconocido';
 				console.error('Error al actualizar cita:', errorData);
@@ -55,7 +67,7 @@ export default function AppointmentsTable({ appointments, isLoading, onStatusCha
 
 			setSuccessMessage('Estado actualizado correctamente');
 			setTimeout(() => setSuccessMessage(null), 3000);
-			
+
 			// Refrescar la lista de citas
 			if (onStatusChange) {
 				onStatusChange();
@@ -91,7 +103,7 @@ export default function AppointmentsTable({ appointments, isLoading, onStatusCha
 
 			if (!response.ok) {
 				const errorData = await response.json();
-				const errorMsg = errorData.details 
+				const errorMsg = errorData.details
 					? `${errorData.error}: ${errorData.details}`
 					: errorData.error || errorData.message || 'Error desconocido';
 				console.error('Error al eliminar cita:', errorData);
@@ -147,13 +159,13 @@ export default function AppointmentsTable({ appointments, isLoading, onStatusCha
 		// Parsear fecha en formato YYYY-MM-DD
 		const [year, month, day] = dateStr.split('-').map(Number);
 		const date = new Date(year, month - 1, day);
-		
+
 		// Parsear hora (puede venir como HH:MM:SS o HH:MM)
 		const [hours, minutes] = timeStr.split(':').map(Number);
 		const hour = hours;
 		const ampm = hour >= 12 ? 'p.m.' : 'a.m.';
 		const displayHour = hour % 12 || 12;
-		
+
 		return `${day}/${month}/${year} ${displayHour}:${String(minutes).padStart(2, '0')} ${ampm}`;
 	};
 
@@ -230,7 +242,7 @@ export default function AppointmentsTable({ appointments, isLoading, onStatusCha
 					</div>
 				</div>
 			)}
-			
+
 			{/* Modal de confirmación de eliminación */}
 			{deleteConfirmId && (
 				<div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -267,7 +279,7 @@ export default function AppointmentsTable({ appointments, isLoading, onStatusCha
 					</div>
 				</div>
 			)}
-			
+
 			{/* Vista de tabla para desktop */}
 			<div class="hidden md:block overflow-x-auto w-full">
 				<table class="w-full min-w-[640px]">
@@ -311,7 +323,9 @@ export default function AppointmentsTable({ appointments, isLoading, onStatusCha
 									<div class="flex items-center gap-1.5">
 										<span class="text-gray-400 text-sm">❓</span>
 										<span class="text-gray-700 text-xs">
-											{apt.property || `${apt.operationType === 'rentar' ? 'Renta' : 'Compra'} - ${apt.budgetRange}`}
+											{typeof apt.property === 'object' && apt.property !== null
+												? `${apt.property.title} - ${new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(apt.property.price)}`
+												: apt.property || `${apt.operationType === 'rentar' ? 'Renta' : 'Compra'} - ${apt.budgetRange}`}
 										</span>
 									</div>
 								</td>

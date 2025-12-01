@@ -20,7 +20,11 @@ function getImageUrl(imageUrl: string | null | undefined): string | null {
   if (!imageUrl) return null;
 
   // Si la imagen es de Easy Broker, usar el proxy para evitar CORS
-  if (imageUrl.includes('easybroker.com') || imageUrl.includes('ebimg')) {
+  if (
+    imageUrl.includes('easybroker.com') ||
+    imageUrl.includes('ebimg') ||
+    imageUrl.includes('cloudfront')
+  ) {
     return `/api/easybroker/image-proxy?url=${encodeURIComponent(imageUrl)}`;
   }
 
@@ -66,17 +70,26 @@ export function PropertyCard({
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             loading="lazy"
             onError={(e) => {
+              const target = e.target as HTMLImageElement;
               console.warn('⚠️ Error al cargar imagen:', mainImage);
-              // Intentar usar la imagen thumb como fallback
+
+              // Intentar con thumbnail como fallback
               if (
                 property.title_image_thumb &&
                 property.title_image_thumb !== mainImageUrl
               ) {
                 const thumbUrl = getImageUrl(property.title_image_thumb);
-                if (thumbUrl) {
-                  (e.target as HTMLImageElement).src = thumbUrl;
+                if (thumbUrl && target.src !== thumbUrl) {
+                  console.log('🔄 Intentando con thumbnail...');
+                  target.src = thumbUrl;
+                  return;
                 }
               }
+
+              // Si todo falla, usar placeholder SVG
+              target.onerror = null; // Prevenir loop infinito
+              target.src =
+                'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext fill="%239ca3af" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3EImagen no disponible%3C/text%3E%3C/svg%3E';
             }}
           />
         ) : (

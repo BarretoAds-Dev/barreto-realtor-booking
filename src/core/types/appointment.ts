@@ -16,6 +16,7 @@ export interface AppointmentFormData {
 	phone?: string;
 	operationType: OperationType;
 	notes?: string;
+	propertyId?: string | null; // ID de la propiedad relacionada
 	// Campos para rentar
 	budgetRentar?: string;
 	company?: string;

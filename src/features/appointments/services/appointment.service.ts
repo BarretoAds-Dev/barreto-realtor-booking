@@ -12,7 +12,7 @@ export class AppointmentsService {
 	 */
 	static normalizeTime(time: string): string {
 		if (!time.includes(':')) return time;
-		
+
 		const parts = time.split(':');
 		if (parts.length === 2) {
 			return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}:00`;
@@ -143,6 +143,7 @@ export class AppointmentsService {
 		const appointmentData: AppointmentInsert = {
 			slot_id: slot.id,
 			agent_id: slot.agent_id,
+			property_id: formData.propertyId || null,
 			client_name: formData.name,
 			client_email: formData.email.toLowerCase(),
 			client_phone: formData.phone || null,
