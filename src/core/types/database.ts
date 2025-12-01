@@ -68,6 +68,47 @@ export type Database = {
 				Insert: Omit<Database['public']['Tables']['holidays']['Row'], 'id'>;
 				Update: Partial<Database['public']['Tables']['holidays']['Insert']>;
 			};
+			properties: {
+				Row: {
+					id: string;
+					title: string;
+					address: string;
+					price: number;
+					property_type: string;
+					bedrooms: number | null;
+					bathrooms: number | null;
+					area: number | null;
+					features: Record<string, any> | null;
+					description: string | null;
+					status: string;
+					created_at: string;
+					updated_at: string | null;
+				};
+				Insert: {
+					title: string;
+					address: string;
+					price: number;
+					property_type?: string;
+					bedrooms?: number | null;
+					bathrooms?: number | null;
+					area?: number | null;
+					features?: Record<string, any> | null;
+					description?: string | null;
+					status?: string;
+				};
+				Update: {
+					title?: string;
+					address?: string;
+					price?: number;
+					property_type?: string;
+					bedrooms?: number | null;
+					bathrooms?: number | null;
+					area?: number | null;
+					features?: Record<string, any> | null;
+					description?: string | null;
+					status?: string;
+				};
+			};
 		};
 	};
 };

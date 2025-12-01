@@ -6,16 +6,20 @@ import { z } from 'zod';
  */
 
 // Schema para ubicación de propiedad
-export const EasyBrokerLocationSchema = z.object({
-	country: z.string(),
-	state: z.string(),
-	city: z.string(),
-	neighborhood: z.string().nullable(),
-	address: z.string().nullable(),
-	postal_code: z.string().nullable(),
-	latitude: z.number().nullable(),
-	longitude: z.number().nullable(),
-});
+// Easy Broker devuelve location como STRING, no como objeto
+export const EasyBrokerLocationSchema = z.union([
+	z.string(), // Formato: "Polanco, Miguel Hidalgo, CDMX"
+	z.object({
+		country: z.string(),
+		state: z.string(),
+		city: z.string(),
+		neighborhood: z.string().nullable(),
+		address: z.string().nullable(),
+		postal_code: z.string().nullable(),
+		latitude: z.number().nullable(),
+		longitude: z.number().nullable(),
+	}),
+]);
 
 export type EasyBrokerLocation = z.infer<typeof EasyBrokerLocationSchema>;
 
@@ -57,7 +61,7 @@ export const EasyBrokerPropertySchema = z.object({
 	title: z.string(),
 	title_image_full: z.string().nullable(),
 	title_image_thumb: z.string().nullable(),
-	location: EasyBrokerLocationSchema,
+	location: EasyBrokerLocationSchema, // Puede ser string o objeto
 	operations: z.array(
 		z.object({
 			type: z.string(),

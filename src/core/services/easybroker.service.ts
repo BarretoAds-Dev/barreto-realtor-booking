@@ -183,54 +183,84 @@ class EasyBrokerService {
 				if (data.content.length > 0) {
 					const firstProp = data.content[0];
 					console.log('📋 Campos disponibles en propiedad:', Object.keys(firstProp));
-					console.log('🖼️ Imágenes de la primera propiedad:', {
-						title_image_full: firstProp.title_image_full,
-						title_image_thumb: firstProp.title_image_thumb,
-						images_count: firstProp.images?.length || 0,
-						images: firstProp.images?.slice(0, 3).map((img: any) => ({
-							id: img.id,
-							url: img.url?.substring(0, 100),
-							title: img.title,
-						})),
+					console.log('📍 Location RAW de la primera propiedad:', JSON.stringify(firstProp.location, null, 2));
+					console.log('🏠 Features RAW de la primera propiedad:', JSON.stringify(firstProp.features, null, 2));
+					console.log('🔍 Buscando location en otros campos:', {
+						has_location: !!firstProp.location,
+						location_keys: firstProp.location ? Object.keys(firstProp.location) : [],
+						has_address: !!firstProp.address,
+						has_city: !!firstProp.city,
+						has_state: !!firstProp.state,
+						has_neighborhood: !!firstProp.neighborhood,
+					});
+					console.log('🔍 Buscando features en otros campos:', {
+						has_features: !!firstProp.features,
+						features_keys: firstProp.features ? Object.keys(firstProp.features) : [],
+						has_bedrooms: firstProp.bedrooms !== undefined,
+						has_bathrooms: firstProp.bathrooms !== undefined,
+						has_parking: firstProp.parking_spaces !== undefined,
 					});
 				}
 
-				const normalizedContent = data.content.map((prop: any) => ({
-					public_id: prop.public_id || prop.id || String(Math.random()),
-					title: prop.title || '',
-					title_image_full: prop.title_image_full || prop.title_image_thumb || null,
-					title_image_thumb: prop.title_image_thumb || null,
-					location: prop.location || {
-						country: 'México',
-						state: '',
-						city: '',
-						neighborhood: null,
-						address: null,
-						postal_code: null,
-						latitude: null,
-						longitude: null,
-					},
-					operations: prop.operations || [],
-					property_type: prop.property_type || 'casa',
-					status: prop.status || 'active',
-					features: prop.features || {
-						bathrooms: null,
-						bedrooms: null,
-						parking_spaces: null,
-						half_bathrooms: null,
-						lot_size: null,
-						construction_size: null,
-						floors: null,
-					},
-					images: prop.images || [],
-					description: prop.description || null,
-					tags: prop.tags || [],
-					show_prices: prop.show_prices !== undefined ? prop.show_prices : true,
-					share_commission: prop.share_commission !== undefined ? prop.share_commission : false,
-					public_url: prop.public_url || prop.url || null, // URL pública de Easy Broker
-					slug: prop.slug || prop.title_slug || null, // Slug de la propiedad
-					agency_slug: prop.agency_slug || prop.agency?.slug || null, // Slug de la agencia
-				}));
+				const normalizedContent = data.content.map((prop: any) => {
+					// Normalizar location - Easy Broker devuelve location como STRING
+					// Si es string, mantenerlo; si es objeto, convertirlo a string
+					let normalizedLocation: string | object;
+					if (typeof prop.location === 'string') {
+						normalizedLocation = prop.location;
+					} else if (prop.location && typeof prop.location === 'object') {
+						// Si es objeto, construir string desde los campos
+						const parts: string[] = [];
+						if (prop.location.address) parts.push(prop.location.address);
+						if (prop.location.neighborhood) parts.push(prop.location.neighborhood);
+						if (prop.location.city) parts.push(prop.location.city);
+						if (prop.location.state && prop.location.state !== prop.location.city) {
+							parts.push(prop.location.state);
+						}
+						normalizedLocation = parts.length > 0 ? parts.join(', ') : prop.location.country || 'México';
+					} else {
+						// Fallback: buscar en otros campos o usar string vacío
+						const parts: string[] = [];
+						if (prop.address) parts.push(prop.address);
+						if (prop.neighborhood) parts.push(prop.neighborhood);
+						if (prop.city) parts.push(prop.city);
+						if (prop.state) parts.push(prop.state);
+						normalizedLocation = parts.length > 0 ? parts.join(', ') : prop.country || 'México';
+					}
+
+					// Normalizar features - buscar en múltiples lugares posibles
+					const features = prop.features || {};
+					// La API puede tener los campos directamente en prop o anidados en features
+					const normalizedFeatures = {
+						bathrooms: features.bathrooms ?? prop.bathrooms ?? features.bathrooms_count ?? prop.bathrooms_count ?? null,
+						bedrooms: features.bedrooms ?? prop.bedrooms ?? features.bedrooms_count ?? prop.bedrooms_count ?? null,
+						parking_spaces: features.parking_spaces ?? prop.parking_spaces ?? features.parking_count ?? prop.parking_count ?? null,
+						half_bathrooms: features.half_bathrooms ?? prop.half_bathrooms ?? features.half_bathrooms_count ?? prop.half_bathrooms_count ?? null,
+						lot_size: features.lot_size ?? prop.lot_size ?? features.lot_size_m2 ?? prop.lot_size_m2 ?? null,
+						construction_size: features.construction_size ?? prop.construction_size ?? features.construction_size_m2 ?? prop.construction_size_m2 ?? features.area ?? prop.area ?? prop.surface ?? null,
+						floors: features.floors ?? prop.floors ?? features.floors_count ?? prop.floors_count ?? null,
+					};
+
+					return {
+						public_id: prop.public_id || prop.id || String(Math.random()),
+						title: prop.title || '',
+						title_image_full: prop.title_image_full || prop.title_image_thumb || null,
+						title_image_thumb: prop.title_image_thumb || null,
+						location: normalizedLocation, // String o objeto según lo que devuelva la API
+						operations: prop.operations || [],
+						property_type: prop.property_type || 'casa',
+						status: prop.status || 'active',
+						features: normalizedFeatures,
+						images: prop.images || [],
+						description: prop.description || null,
+						tags: prop.tags || [],
+						show_prices: prop.show_prices !== undefined ? prop.show_prices : true,
+						share_commission: prop.share_commission !== undefined ? prop.share_commission : false,
+						public_url: prop.public_url || prop.url || null,
+						slug: prop.slug || prop.title_slug || null,
+						agency_slug: prop.agency_slug || prop.agency?.slug || null,
+					};
+				});
 
 				console.log(`✅ Normalizadas ${normalizedContent.length} propiedades`);
 				return {
@@ -267,8 +297,50 @@ class EasyBrokerService {
 			};
 		}
 
+		// Normalizar datos incluso si la validación pasa, para asegurar consistencia
+		const normalizedContent = validation.data.content.map((prop) => {
+			// Normalizar location - Easy Broker devuelve location como STRING
+			let normalizedLocation: string | object;
+			if (typeof prop.location === 'string') {
+				normalizedLocation = prop.location;
+			} else if (prop.location && typeof prop.location === 'object') {
+				// Si es objeto, mantenerlo o convertirlo a string
+				const parts: string[] = [];
+				if (prop.location.address) parts.push(prop.location.address);
+				if (prop.location.neighborhood) parts.push(prop.location.neighborhood);
+				if (prop.location.city) parts.push(prop.location.city);
+				if (prop.location.state && prop.location.state !== prop.location.city) {
+					parts.push(prop.location.state);
+				}
+				normalizedLocation = parts.length > 0 ? parts.join(', ') : prop.location.country || 'México';
+			} else {
+				normalizedLocation = 'Ubicación no disponible';
+			}
+
+			// Asegurar que features siempre tenga todos los campos
+			const features = prop.features || {};
+			const normalizedFeatures = {
+				bathrooms: features.bathrooms ?? null,
+				bedrooms: features.bedrooms ?? null,
+				parking_spaces: features.parking_spaces ?? null,
+				half_bathrooms: features.half_bathrooms ?? null,
+				lot_size: features.lot_size ?? null,
+				construction_size: features.construction_size ?? null,
+				floors: features.floors ?? null,
+			};
+
+			return {
+				...prop,
+				location: normalizedLocation,
+				features: normalizedFeatures,
+			};
+		});
+
 		return {
-			data: validation.data,
+			data: {
+				...validation.data,
+				content: normalizedContent,
+			},
 			error: null,
 		};
 	}
