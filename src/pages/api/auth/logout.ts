@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { supabaseAuth } from '../../../config/supabase/auth';
+import { supabaseAuth } from '../../../core/config/auth';
 
 export const prerender = false;
 

@@ -1,35 +1,43 @@
 # 📅 Sistema de Reserva de Citas - Coldwell Banker
 
-Sistema moderno de reserva de citas desarrollado con **Astro**, **Preact** y **Content Collections**, diseñado específicamente para Coldwell Banker con validación avanzada y optimizaciones de rendimiento.
+Sistema moderno de reserva de citas desarrollado con **Astro**, **Preact** y **Supabase**, diseñado específicamente para Coldwell Banker con validación avanzada y optimizaciones de rendimiento.
 
 ## 🚀 Características Principales
 
 - ✅ **Arquitectura Islands** - JavaScript mínimo con Preact solo donde se necesita
 - ✅ **Validación Avanzada** - Schemas Zod con validación en tiempo real
-- ✅ **Content Collections** - Gestión estructurada de disponibilidad y horarios
+- ✅ **Base de Datos Supabase** - Gestión de disponibilidad y citas en tiempo real
 - ✅ **Diseño Profesional** - Glassmorphism con branding Coldwell Banker
 - ✅ **Type Safety Completo** - TypeScript en todo el proyecto
-- ✅ **Optimizaciones** - Critical CSS inlining, lazy loading, SSG
+- ✅ **Arquitectura Modular** - Estructura organizada por features
+- ✅ **CRM Integrado** - Panel de administración para gestionar citas
 
 ## 🛠️ Stack Tecnológico
 
-- **Astro 5.16.3** - Framework principal (SSG)
+- **Astro 5.16.3** - Framework principal (SSR)
 - **Preact 10.27.2** - UI interactiva (Islands)
 - **TypeScript** - Tipado estático
 - **Tailwind CSS 3.4.18** - Estilos
 - **Zod 4.1.13** - Validación de schemas
-- **Astro Content Collections** - Gestión de datos
+- **Supabase** - Base de datos y autenticación
+- **Cloudflare Workers** - Deploy y hosting
 
 ## 📋 Requisitos Previos
 
 - Node.js 18+ 
 - pnpm (recomendado) o npm
+- Cuenta de Supabase configurada
 
 ## 🏃 Instalación y Uso
 
 ```bash
 # Instalar dependencias
 pnpm install
+
+# Configurar variables de entorno
+# Crear archivo .env con:
+# PUBLIC_SUPABASE_URL=tu_url_de_supabase
+# PUBLIC_SUPABASE_ANON_KEY=tu_clave_anonima
 
 # Servidor de desarrollo
 pnpm dev
@@ -45,26 +53,54 @@ pnpm preview
 
 ```
 src/
-├── components/
-│   ├── Welcome.astro              # Contenedor principal
-│   ├── AppointmentBooking.tsx    # Orquestador (Preact Island)
-│   ├── Calendar.tsx               # Calendario interactivo
-│   ├── TimeSlots.tsx              # Selección de horarios
-│   ├── AppointmentForm.tsx       # Formulario con validación
-│   ├── ConfirmationPanel.tsx     # Panel de confirmación
-│   └── ProgressIndicator.tsx     # Indicador de progreso
-├── content/
-│   ├── config.ts                  # Configuración Content Collections
-│   ├── availability/              # Horarios disponibles
-│   ├── schedule/                  # Configuración de horarios
-│   ├── holidays/                  # Días festivos
-│   └── appointments/              # Citas reservadas
-├── layouts/
-│   └── Layout.astro               # Layout base
-├── pages/
-│   └── index.astro                # Página principal
-└── schemas/
-    └── appointmentSchema.ts       # Schemas de validación
+├── features/                    # Features organizados por dominio
+│   ├── appointments/           # Feature de citas
+│   │   ├── components/         # Componentes específicos de citas
+│   │   ├── api/               # API routes de citas (legacy, migrar a pages/api)
+│   │   ├── hooks/             # Hooks específicos de citas
+│   │   ├── types.ts           # Tipos específicos de citas
+│   │   └── schemas.ts         # Schemas de validación Zod
+│   ├── crm/                   # Feature de CRM
+│   │   ├── components/        # Componentes del dashboard CRM
+│   │   └── types.ts           # Tipos específicos del CRM
+│   └── auth/                  # Feature de autenticación
+│       ├── components/        # Componentes de login/logout
+│       └── types.ts           # Tipos de autenticación
+├── shared/                     # Código compartido
+│   ├── components/            # Componentes compartidos
+│   ├── ui/                    # Componentes UI reutilizables
+│   └── utils/                # Utilidades compartidas
+├── core/                      # Núcleo del sistema
+│   ├── config/                # Configuraciones
+│   │   ├── supabase.ts       # Cliente de Supabase público
+│   │   └── auth.ts           # Cliente de Supabase con auth
+│   ├── types/                 # Tipos base y tipos de DB
+│   │   └── database.ts        # Tipos de Supabase
+│   └── constants/             # Constantes globales
+├── lib/                       # Librerías y servicios
+│   ├── services/              # Servicios de negocio
+│   │   ├── appointments.service.ts
+│   │   └── availability.service.ts
+│   └── utils/                 # Utilidades de librería
+├── hooks/                     # Hooks globales de Preact
+├── layouts/                   # Layouts de Astro
+│   ├── Layout.astro
+│   └── crm/
+│       └── CRMLayout.astro
+├── pages/                     # Páginas y API routes
+│   ├── api/                   # API endpoints
+│   │   ├── appointments.ts    # Crear citas
+│   │   ├── availability.ts    # Obtener disponibilidad
+│   │   ├── auth/              # Autenticación
+│   │   └── crm/               # API del CRM
+│   ├── citas/                 # Páginas públicas de citas
+│   ├── crm/                   # Páginas del CRM
+│   ├── login.astro            # Página de login
+│   └── index.astro            # Página principal
+└── content/                   # Content Collections (opcional)
+    ├── config.ts
+    ├── schedule/
+    └── holidays/
 ```
 
 ## 🎯 Flujo de Reserva
@@ -102,49 +138,43 @@ src/
 - Validación condicional según tipo de operación
 - Schemas Zod con type safety completo
 
-## 📊 Métricas de Rendimiento
-
-- **Bundle Size (gzipped)**: ~30 kB de JavaScript
-- **LCP Optimizado**: Critical CSS inlined
-- **SSG**: Pre-renderizado estático para máximo rendimiento
-
 ## 🔧 Configuración
-
-### Content Collections
-
-Los datos se gestionan a través de Content Collections en `src/content/`:
-
-- `availability/` - Horarios disponibles por fecha
-- `schedule/` - Configuración de horarios de negocio
-- `holidays/` - Días festivos bloqueados
-- `appointments/` - Citas reservadas
 
 ### Variables de Entorno
 
-Crear `.env` para configuración local (opcional):
+Crear `.env` en la raíz del proyecto:
 
 ```env
-# Ejemplo de variables de entorno
-PUBLIC_API_URL=https://api.ejemplo.com
+PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
+PUBLIC_SUPABASE_ANON_KEY=tu_clave_anonima
 ```
+
+### Base de Datos
+
+El proyecto requiere las siguientes tablas en Supabase:
+- `agents` - Agentes inmobiliarios
+- `availability_slots` - Slots de disponibilidad
+- `appointments` - Citas reservadas
+- `holidays` - Días festivos
+
+Ver migraciones en `supabase/migrations/` para el esquema completo.
 
 ## 🚢 Despliegue
 
-El proyecto está optimizado para despliegue estático:
+El proyecto está configurado para Cloudflare Workers:
 
 ```bash
 # Build
 pnpm build
 
-# Los archivos estáticos estarán en dist/
+# Los archivos estarán en dist/
 ```
 
 ### Plataformas Recomendadas
 
-- **Vercel** - Deploy automático desde GitHub
+- **Cloudflare Pages** - Deploy automático desde GitHub
+- **Vercel** - Deploy con funciones serverless
 - **Netlify** - Deploy con funciones serverless
-- **Cloudflare Pages** - Deploy rápido y global
-- **GitHub Pages** - Hosting estático gratuito
 
 ## 📝 Scripts Disponibles
 
@@ -154,6 +184,24 @@ pnpm build    # Build de producción
 pnpm preview  # Preview del build local
 pnpm astro    # CLI de Astro
 ```
+
+## 🏗️ Arquitectura
+
+### Features-Based Organization
+
+El proyecto está organizado por features (dominios de negocio):
+- Cada feature tiene sus propios componentes, tipos y lógica
+- Los servicios de negocio están en `lib/services/`
+- La configuración central está en `core/`
+- El código compartido está en `shared/`
+
+### Separación de Responsabilidades
+
+- **Components**: Solo UI y lógica de presentación
+- **Services**: Lógica de negocio y comunicación con APIs
+- **Types**: Definiciones de tipos TypeScript
+- **Schemas**: Validación con Zod
+- **API Routes**: Endpoints HTTP de Astro
 
 ## 🤝 Contribución
 
@@ -178,6 +226,7 @@ Este proyecto es propiedad de Coldwell Banker.
 - Preact por la ligereza y performance
 - Tailwind CSS por la utilidad de estilos
 - Zod por la validación robusta
+- Supabase por la infraestructura de backend
 
 ---
 

@@ -44,7 +44,7 @@ if (supabaseUrl) {
 		
 		// En build time, hacer fetch a la API interna
 		const baseUrl = import.meta.env.SITE || 'http://localhost:4321';
-		const response = await fetch(`${baseUrl}/api/citas/availability?start=${startDate}&end=${endDateStr}`);
+		const response = await fetch(`${baseUrl}/api/availability?start=${startDate}&end=${endDateStr}`);
 		
 		if (response.ok) {
 			filteredSlots = await response.json();

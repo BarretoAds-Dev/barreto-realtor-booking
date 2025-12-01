@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
-import { supabase, type Appointment } from '../../../config/supabase/supabase';
+import { supabase } from '../../../core/config/supabase';
+import type { Appointment } from '../../../core/types/database';
 
 export const prerender = false; // Server-rendered
 

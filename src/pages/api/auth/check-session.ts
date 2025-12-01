@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { supabaseAuth } from '../../../config/supabase/auth';
+import { supabaseAuth } from '../../../core/config/auth';
 
 export const prerender = false;
 
@@ -20,7 +20,6 @@ export const GET: APIRoute = async ({ request }) => {
 			);
 		}
 
-		// Obtener sesión actual
 		const { data: { session }, error } = await supabaseAuth.auth.getSession();
 
 		if (error || !session) {
@@ -62,4 +61,3 @@ export const GET: APIRoute = async ({ request }) => {
 		);
 	}
 };
-
