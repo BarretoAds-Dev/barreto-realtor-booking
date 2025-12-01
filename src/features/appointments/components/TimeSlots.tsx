@@ -71,19 +71,19 @@ export default function TimeSlots({ selectedDate, selectedTime, slots, onTimeSel
 				)}
 			</div>
 			
-			<div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+			<div className="bg-white p-6 border border-gray-200 rounded-lg shadow-md">
 				{/* Leyenda de colores */}
 				<div className="flex flex-wrap gap-4 mb-4 text-xs text-gray-600">
 					<div className="flex items-center gap-2">
-						<div className="w-4 h-4 bg-green-50 border-2 border-green-200 rounded"></div>
+						<div className="w-4 h-4 bg-green-100 border border-green-400 rounded"></div>
 						<span>Disponible</span>
 					</div>
 					<div className="flex items-center gap-2">
-						<div className="w-4 h-4 bg-red-50 border-2 border-red-200 rounded"></div>
+						<div className="w-4 h-4 bg-red-100 border border-red-400 rounded"></div>
 						<span>Ocupado</span>
 					</div>
 					<div className="flex items-center gap-2">
-						<div className="w-4 h-4 bg-gray-50 border-2 border-gray-200 rounded"></div>
+						<div className="w-4 h-4 bg-gray-100 border border-gray-400 rounded"></div>
 						<span>No disponible</span>
 					</div>
 				</div>
@@ -100,17 +100,17 @@ export default function TimeSlots({ selectedDate, selectedTime, slots, onTimeSel
 						let selectedClasses = '';
 						
 						if (status === 'available') {
-							// Disponible: verde claro
-							baseClasses = 'bg-green-50 border-green-200 text-gray-900 hover:bg-green-100 hover:border-green-300';
-							selectedClasses = 'bg-gray-900 border-gray-900 text-white scale-105 shadow-md';
+							// Disponible: verde claro (como en la imagen)
+							baseClasses = 'bg-green-50 border-green-300 text-green-700 hover:bg-green-100 hover:border-green-400';
+							selectedClasses = 'bg-gray-900 border-gray-900 text-white scale-105 shadow-lg';
 						} else if (status === 'occupied') {
-							// Ocupado: rojo/rosa claro
-							baseClasses = 'bg-red-50 border-red-200 text-gray-600 cursor-not-allowed';
-							selectedClasses = 'bg-red-100 border-red-300';
+							// Ocupado: rojo/rosa claro (como en la imagen)
+							baseClasses = 'bg-red-50 border-red-300 text-red-700 cursor-not-allowed opacity-75';
+							selectedClasses = 'bg-red-100 border-red-400';
 						} else {
 							// Deshabilitado: gris claro
-							baseClasses = 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed';
-							selectedClasses = 'bg-gray-100 border-gray-200';
+							baseClasses = 'bg-gray-50 border-gray-300 text-gray-400 cursor-not-allowed opacity-50';
+							selectedClasses = 'bg-gray-100 border-gray-400';
 						}
 						
 						return (
@@ -121,12 +121,12 @@ export default function TimeSlots({ selectedDate, selectedTime, slots, onTimeSel
 								onClick={() => isClickable && onTimeSelect(slot.time)}
 								className={`
 									py-3 px-4 text-sm font-bold transition-all duration-200 relative
-									border rounded-lg
+									border-2 rounded-md shadow-sm hover:shadow-md
 									${isSelected && isClickable
 										? selectedClasses
 										: baseClasses
 									}
-									${isClickable ? 'hover:scale-105 active:scale-95 shadow-sm hover:shadow-md' : ''}
+									${isClickable ? 'hover:scale-105 active:scale-95' : ''}
 								`}
 								title={
 									status === 'available' 
