@@ -1,5 +1,6 @@
 /** @jsxImportSource preact */
 import LogoutButton from './LogoutButton';
+import UserProfileButton from './UserProfileButton';
 
 interface SidebarProps {
 	currentView: string;
@@ -57,7 +58,7 @@ export default function Sidebar({ currentView, onViewChange, isOpen = false, onC
 							</div>
 						</div>
 					)}
-					
+
 					{/* Botón contraer/expandir - Solo visible en desktop (lg:) */}
 					{onToggleCollapse && (
 						<div class={`hidden lg:flex ${isCollapsed ? 'justify-center' : 'justify-end'} mb-4`}>
@@ -79,7 +80,7 @@ export default function Sidebar({ currentView, onViewChange, isOpen = false, onC
 							</button>
 						</div>
 					)}
-					
+
 					{/* Botón cerrar para móvil */}
 					<button
 						onClick={onClose}
@@ -135,30 +136,35 @@ export default function Sidebar({ currentView, onViewChange, isOpen = false, onC
 
 				{/* Botones inferiores */}
 				<div class="mt-auto pt-6 border-t border-gray-200 space-y-2">
-					{/* Botón de configuración */}
-					<button
+					{/* Botón de perfil de usuario - Principal */}
+					<UserProfileButton
+						isCollapsed={isCollapsed}
 						onClick={() => onViewChange('settings')}
-						class={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all duration-150 shadow-md hover:shadow-lg ${
-							isCollapsed ? 'lg:justify-center lg:px-2 lg:py-2.5' : 'text-left'
-						} ${
-							currentView === 'settings'
-								? 'bg-gray-900 text-white'
-								: 'text-gray-500 hover:bg-gray-50'
-						}`}
-						title={isCollapsed ? 'Configuración' : ''}
-					>
-						<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-						</svg>
-						{!isCollapsed && (
+						isActive={currentView === 'settings'}
+					/>
+
+					{/* Botón de configuración - Solo visible cuando no está colapsado */}
+					{!isCollapsed && (
+						<button
+							onClick={() => onViewChange('settings')}
+							class={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all duration-150 shadow-md hover:shadow-lg text-left ${
+								currentView === 'settings'
+									? 'bg-gray-900 text-white'
+									: 'text-gray-500 hover:bg-gray-50'
+							}`}
+						>
+							<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+							</svg>
 							<span class={`text-xs whitespace-nowrap font-normal ${
 								currentView === 'settings' ? 'text-white' : ''
 							}`}>
 								Configuración
 							</span>
-						)}
-					</button>
+						</button>
+					)}
+
 					{/* Botón de cambiar usuario */}
 					<LogoutButton showChangeUser={true} isCollapsed={isCollapsed} />
 					{/* Botón de logout */}

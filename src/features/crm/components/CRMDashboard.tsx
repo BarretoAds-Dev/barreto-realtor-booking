@@ -6,6 +6,8 @@ import AppointmentsTable from './AppointmentsTable';
 import CreateAppointmentModal from './CreateAppointmentModal';
 import AdvancedFilters, { type FilterState } from './AdvancedFilters';
 import AdminSettings from './AdminSettings';
+import DashboardPanel from './DashboardPanel';
+import { Button } from '../../../shared/ui';
 
 interface Appointment {
 	id: string;
@@ -23,7 +25,7 @@ interface Appointment {
 }
 
 export default function CRMApp() {
-	const [currentView, setCurrentView] = useState('appointments');
+	const [currentView, setCurrentView] = useState('dashboard');
 	const [appointments, setAppointments] = useState<Appointment[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -56,10 +58,10 @@ export default function CRMApp() {
 				setSidebarCollapsed(false);
 			}
 		};
-		
+
 		window.addEventListener('resize', handleResize);
 		handleResize(); // Verificar al montar
-		
+
 		return () => window.removeEventListener('resize', handleResize);
 	}, []);
 
@@ -79,7 +81,7 @@ export default function CRMApp() {
 				const emailMatch = apt.clientEmail.toLowerCase().includes(query);
 				const phoneMatch = apt.clientPhone?.toLowerCase().includes(query) || false;
 				const propertyMatch = apt.property?.toLowerCase().includes(query) || false;
-				
+
 				return nameMatch || emailMatch || phoneMatch || propertyMatch;
 			});
 		}
@@ -88,21 +90,21 @@ export default function CRMApp() {
 		if (advancedFilters) {
 			// Filtro por nombre
 			if (advancedFilters.name) {
-				filtered = filtered.filter(apt => 
+				filtered = filtered.filter(apt =>
 					apt.clientName.toLowerCase().includes(advancedFilters.name.toLowerCase())
 				);
 			}
 
 			// Filtro por email
 			if (advancedFilters.email) {
-				filtered = filtered.filter(apt => 
+				filtered = filtered.filter(apt =>
 					apt.clientEmail.toLowerCase().includes(advancedFilters.email.toLowerCase())
 				);
 			}
 
 			// Filtro por teléfono
 			if (advancedFilters.phone) {
-				filtered = filtered.filter(apt => 
+				filtered = filtered.filter(apt =>
 					apt.clientPhone?.toLowerCase().includes(advancedFilters.phone.toLowerCase())
 				);
 			}
@@ -128,7 +130,7 @@ export default function CRMApp() {
 
 			// Filtro por tipo de operación
 			if (advancedFilters.operationType) {
-				filtered = filtered.filter(apt => 
+				filtered = filtered.filter(apt =>
 					apt.operationType === advancedFilters.operationType
 				);
 			}
@@ -158,14 +160,14 @@ export default function CRMApp() {
 
 			// Filtro por rango de precio
 			if (advancedFilters.priceRange) {
-				filtered = filtered.filter(apt => 
+				filtered = filtered.filter(apt =>
 					apt.budgetRange === advancedFilters.priceRange
 				);
 			}
 
 			// Filtro por estado (ya se aplica con statusFilter, pero lo respetamos)
 			if (advancedFilters.status && advancedFilters.status !== 'all') {
-				filtered = filtered.filter(apt => 
+				filtered = filtered.filter(apt =>
 					apt.status === advancedFilters.status
 				);
 			}
@@ -233,7 +235,7 @@ export default function CRMApp() {
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
 								</svg>
 							</button>
-							
+
 							{/* Campo de búsqueda */}
 							{showSearchInput ? (
 								<div class="flex items-center gap-2 flex-1 max-w-md">
@@ -260,7 +262,7 @@ export default function CRMApp() {
 							) : (
 								<>
 									{/* Botón de búsqueda - visible en todos los tamaños */}
-									<button 
+									<button
 										onClick={() => setShowSearchInput(true)}
 										class="p-2 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-50 transition-all duration-150 shadow-md hover:shadow-lg flex-shrink-0"
 										title="Buscar citas"
@@ -270,7 +272,7 @@ export default function CRMApp() {
 										</svg>
 									</button>
 									{/* Botón de filtros avanzados - visible en todos los tamaños */}
-									<button 
+									<button
 										onClick={() => setShowAdvancedFilters(true)}
 										class={`p-2 rounded-md transition-all duration-150 shadow-md hover:shadow-lg relative flex-shrink-0 ${
 											advancedFilters
@@ -290,12 +292,15 @@ export default function CRMApp() {
 							)}
 						</div>
 						{/* Botón Agendar Cita - siempre visible con texto completo */}
-						<button 
+						<Button
 							onClick={() => setShowCreateModal(true)}
-							class="bg-gray-900 hover:bg-gray-800 text-white px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg font-medium text-sm transition-all duration-150 shadow-md hover:shadow-lg whitespace-nowrap flex-shrink-0"
+							variant="primary"
+							size="sm"
+							uppercase={false}
+							className="font-normal whitespace-nowrap flex-shrink-0"
 						>
 							Agendar Cita
-						</button>
+						</Button>
 					</div>
 				</header>
 
@@ -321,7 +326,7 @@ export default function CRMApp() {
 						</div>
 					</div>
 				)}
-				
+
 				{currentView === 'appointments' ? (
 					<div class="w-full lg:max-w-7xl lg:mx-auto">
 						{/* Header */}
@@ -379,12 +384,12 @@ export default function CRMApp() {
 						</div>
 
 						{/* Tabla de citas */}
-						<AppointmentsTable 
-							appointments={filteredAppointments} 
+						<AppointmentsTable
+							appointments={filteredAppointments}
 							isLoading={isLoading}
 							onStatusChange={fetchAppointments}
 						/>
-						
+
 						{/* Mensaje cuando no hay resultados de búsqueda */}
 						{searchQuery.trim() && filteredAppointments.length === 0 && !isLoading && (
 							<div class="text-center py-8">
@@ -402,10 +407,7 @@ export default function CRMApp() {
 						)}
 					</div>
 				) : currentView === 'dashboard' ? (
-					<div class="w-full lg:max-w-7xl lg:mx-auto">
-						<h1 class="text-xl sm:text-2xl font-bold text-gray-900 mb-3">Panel General</h1>
-						<p class="text-gray-600 text-xs sm:text-sm">Vista de dashboard (próximamente)</p>
-					</div>
+					<DashboardPanel onNavigateToAppointments={() => setCurrentView('appointments')} />
 				) : currentView === 'properties' ? (
 					<div class="w-full lg:max-w-7xl lg:mx-auto">
 						<h1 class="text-xl sm:text-2xl font-bold text-gray-900 mb-3">Propiedades</h1>

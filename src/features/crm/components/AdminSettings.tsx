@@ -1,6 +1,8 @@
 /** @jsxImportSource preact */
-import { useState, useEffect } from 'preact/hooks';
+import { useState, useEffect, useRef } from 'preact/hooks';
 import { supabaseAuth } from '../../../core/config/auth';
+import { uploadAvatar, deleteAvatar } from '../../../core/services/storage.service';
+import { Button } from '../../../shared/ui';
 
 interface AdminSettingsProps {
 	// Props si es necesario
@@ -10,6 +12,7 @@ interface UserProfile {
 	id: string;
 	email: string;
 	full_name: string | null;
+	avatar_url: string | null;
 }
 
 export default function AdminSettings({}: AdminSettingsProps) {
@@ -17,13 +20,19 @@ export default function AdminSettings({}: AdminSettingsProps) {
 	const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 	const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 	const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-	
+
 	// Estados para el formulario de perfil
 	const [profileForm, setProfileForm] = useState({
 		full_name: '',
 		email: '',
+		avatar_url: '',
 	});
-	
+
+	// Estados para la imagen de perfil
+	const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+	const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
+
 	// Estados para cambio de contraseña
 	const [passwordForm, setPasswordForm] = useState({
 		currentPassword: '',
@@ -32,7 +41,7 @@ export default function AdminSettings({}: AdminSettingsProps) {
 	});
 	const [showPasswordForm, setShowPasswordForm] = useState(false);
 	const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
-	
+
 	// Estados para controlar qué secciones están expandidas
 	const [expandedSections, setExpandedSections] = useState({
 		profile: false,
@@ -69,21 +78,25 @@ export default function AdminSettings({}: AdminSettingsProps) {
 			setIsLoadingProfile(true);
 			try {
 				const { data: { user }, error } = await supabaseAuth.auth.getUser();
-				
+
 				if (error) throw error;
-				
+
 				if (user) {
+					const avatarUrl = user.user_metadata?.avatar_url || null;
 					const profile: UserProfile = {
 						id: user.id,
 						email: user.email || '',
 						full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
+						avatar_url: avatarUrl,
 					};
-					
+
 					setUserProfile(profile);
 					setProfileForm({
 						full_name: profile.full_name || '',
 						email: profile.email,
+						avatar_url: avatarUrl || '',
 					});
+					setAvatarPreview(avatarUrl);
 				}
 			} catch (error) {
 				console.error('Error al cargar perfil:', error);
@@ -114,32 +127,41 @@ export default function AdminSettings({}: AdminSettingsProps) {
 				if (emailError) throw emailError;
 			}
 
-			// Actualizar metadata (nombre)
+			// Actualizar metadata (nombre y avatar)
+			const updateData: Record<string, unknown> = {
+				full_name: profileForm.full_name,
+				name: profileForm.full_name,
+			};
+
+			if (profileForm.avatar_url) {
+				updateData.avatar_url = profileForm.avatar_url;
+			}
+
 			const { error: metadataError } = await supabaseAuth.auth.updateUser({
-				data: {
-					full_name: profileForm.full_name,
-					name: profileForm.full_name,
-				},
+				data: updateData,
 			});
 			if (metadataError) throw metadataError;
 
 			setSaveMessage({ type: 'success', text: 'Perfil actualizado exitosamente' });
 			setTimeout(() => setSaveMessage(null), 3000);
-			
+
 			// Recargar perfil
 			const { data: { user: updatedUser } } = await supabaseAuth.auth.getUser();
 			if (updatedUser) {
+				const avatarUrl = updatedUser.user_metadata?.avatar_url || null;
 				setUserProfile({
 					id: updatedUser.id,
 					email: updatedUser.email || '',
 					full_name: updatedUser.user_metadata?.full_name || updatedUser.user_metadata?.name || null,
+					avatar_url: avatarUrl,
 				});
+				setAvatarPreview(avatarUrl);
 			}
 		} catch (error: any) {
 			console.error('Error al actualizar perfil:', error);
-			setSaveMessage({ 
-				type: 'error', 
-				text: error.message || 'Error al actualizar el perfil' 
+			setSaveMessage({
+				type: 'error',
+				text: error.message || 'Error al actualizar el perfil'
 			});
 			setTimeout(() => setSaveMessage(null), 5000);
 		} finally {
@@ -176,7 +198,7 @@ export default function AdminSettings({}: AdminSettingsProps) {
 
 			setSaveMessage({ type: 'success', text: 'Contraseña actualizada exitosamente' });
 			setTimeout(() => setSaveMessage(null), 3000);
-			
+
 			// Limpiar formulario
 			setPasswordForm({
 				currentPassword: '',
@@ -186,9 +208,9 @@ export default function AdminSettings({}: AdminSettingsProps) {
 			setShowPasswordForm(false);
 		} catch (error: any) {
 			console.error('Error al cambiar contraseña:', error);
-			setSaveMessage({ 
-				type: 'error', 
-				text: error.message || 'Error al cambiar la contraseña' 
+			setSaveMessage({
+				type: 'error',
+				text: error.message || 'Error al cambiar la contraseña'
 			});
 			setTimeout(() => setSaveMessage(null), 5000);
 		} finally {
@@ -223,6 +245,182 @@ export default function AdminSettings({}: AdminSettingsProps) {
 				[field]: value,
 			},
 		}));
+	};
+
+	// Obtener iniciales del usuario
+	const getUserInitials = (): string => {
+		if (!userProfile?.full_name) {
+			return userProfile?.email?.charAt(0).toUpperCase() || 'U';
+		}
+		const names = userProfile.full_name.trim().split(' ');
+		if (names.length >= 2) {
+			return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+		}
+		return userProfile.full_name.charAt(0).toUpperCase();
+	};
+
+	// Manejar selección de archivo
+	const handleFileSelect = (event: Event) => {
+		const target = event.target as HTMLInputElement;
+		const file = target.files?.[0];
+
+		if (!file) return;
+
+		// Validar tipo de archivo
+		const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+		if (!allowedTypes.includes(file.type)) {
+			setSaveMessage({
+				type: 'error',
+				text: 'Tipo de archivo no permitido. Solo se aceptan imágenes JPEG, PNG o WebP.',
+			});
+			setTimeout(() => setSaveMessage(null), 5000);
+			return;
+		}
+
+		// Validar tamaño (5MB)
+		if (file.size > 5 * 1024 * 1024) {
+			setSaveMessage({
+				type: 'error',
+				text: 'El archivo es demasiado grande. El tamaño máximo es 5MB.',
+			});
+			setTimeout(() => setSaveMessage(null), 5000);
+			return;
+		}
+
+		// Crear preview
+		const reader = new FileReader();
+		reader.onloadend = () => {
+			setAvatarPreview(reader.result as string);
+		};
+		reader.readAsDataURL(file);
+	};
+
+	// Manejar subida de avatar
+	const handleAvatarUpload = async () => {
+		const fileInput = fileInputRef.current;
+		const file = fileInput?.files?.[0];
+
+		if (!file) {
+			setSaveMessage({
+				type: 'error',
+				text: 'Por favor selecciona una imagen',
+			});
+			setTimeout(() => setSaveMessage(null), 5000);
+			return;
+		}
+
+		if (!userProfile) {
+			setSaveMessage({
+				type: 'error',
+				text: 'Usuario no encontrado',
+			});
+			setTimeout(() => setSaveMessage(null), 5000);
+			return;
+		}
+
+		setIsUploadingAvatar(true);
+		setSaveMessage(null);
+
+		try {
+			// Eliminar avatar anterior si existe
+			if (userProfile.avatar_url) {
+				await deleteAvatar(userProfile.avatar_url);
+			}
+
+			// Subir nuevo avatar
+			const result = await uploadAvatar(file, userProfile.id);
+
+			if (!result.success || !result.url) {
+				throw new Error(result.error || 'Error al subir la imagen');
+			}
+
+			// Actualizar perfil con nueva URL
+			setProfileForm({
+				...profileForm,
+				avatar_url: result.url,
+			});
+
+			// Guardar en metadata del usuario
+			const { error: updateError } = await supabaseAuth.auth.updateUser({
+				data: {
+					avatar_url: result.url,
+				},
+			});
+
+			if (updateError) throw updateError;
+
+			setSaveMessage({
+				type: 'success',
+				text: 'Imagen de perfil actualizada exitosamente',
+			});
+			setTimeout(() => setSaveMessage(null), 3000);
+
+			// Actualizar estado del perfil
+			setUserProfile({
+				...userProfile,
+				avatar_url: result.url,
+			});
+		} catch (error) {
+			console.error('Error al subir avatar:', error);
+			setSaveMessage({
+				type: 'error',
+				text: error instanceof Error ? error.message : 'Error al subir la imagen de perfil',
+			});
+			setTimeout(() => setSaveMessage(null), 5000);
+		} finally {
+			setIsUploadingAvatar(false);
+			// Limpiar input
+			if (fileInput) {
+				fileInput.value = '';
+			}
+		}
+	};
+
+	// Manejar eliminación de avatar
+	const handleAvatarRemove = async () => {
+		if (!userProfile?.avatar_url) return;
+
+		setIsUploadingAvatar(true);
+		setSaveMessage(null);
+
+		try {
+			await deleteAvatar(userProfile.avatar_url);
+
+			// Actualizar perfil
+			const { error: updateError } = await supabaseAuth.auth.updateUser({
+				data: {
+					avatar_url: null,
+				},
+			});
+
+			if (updateError) throw updateError;
+
+			setProfileForm({
+				...profileForm,
+				avatar_url: '',
+			});
+			setAvatarPreview(null);
+
+			setUserProfile({
+				...userProfile,
+				avatar_url: null,
+			});
+
+			setSaveMessage({
+				type: 'success',
+				text: 'Imagen de perfil eliminada exitosamente',
+			});
+			setTimeout(() => setSaveMessage(null), 3000);
+		} catch (error) {
+			console.error('Error al eliminar avatar:', error);
+			setSaveMessage({
+				type: 'error',
+				text: error instanceof Error ? error.message : 'Error al eliminar la imagen de perfil',
+			});
+			setTimeout(() => setSaveMessage(null), 5000);
+		} finally {
+			setIsUploadingAvatar(false);
+		}
 	};
 
 	const days = [
@@ -339,6 +537,191 @@ export default function AdminSettings({}: AdminSettingsProps) {
 					{expandedSections.profile && (
 						<div class="p-4 sm:p-5 md:p-6">
 							<div class="space-y-4">
+								{/* Avatar Upload Section - Estilo mejorado tipo card */}
+								<div>
+									<label class="block text-sm font-medium text-gray-700 mb-3">
+										Foto de Perfil
+									</label>
+
+									{/* Profile Card */}
+									<div class="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-5 sm:p-6 border-2 border-indigo-200 shadow-sm">
+										<div class="flex items-start gap-4 sm:gap-6">
+											{/* Avatar con botón Preview superpuesto */}
+											<div class="flex-shrink-0 relative">
+												<div class="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-indigo-500 border-4 border-white shadow-lg">
+													{avatarPreview ? (
+														<img
+															src={avatarPreview}
+															alt="Avatar preview"
+															class="w-full h-full object-cover"
+														/>
+													) : (
+														<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-indigo-600">
+															<span class="text-2xl sm:text-3xl font-bold text-white">
+																{getUserInitials()}
+															</span>
+														</div>
+													)}
+												</div>
+
+												{/* Botón Preview superpuesto */}
+												{avatarPreview && avatarPreview.includes('data:') && (
+													<button
+														onClick={() => {
+															// Abrir preview en modal o nueva ventana
+															const newWindow = window.open();
+															if (newWindow) {
+																newWindow.document.write(`
+																	<html>
+																		<head><title>Preview</title></head>
+																		<body style="margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#1a1a1a;">
+																			<img src="${avatarPreview}" style="max-width:90vw;max-height:90vh;border-radius:8px;" />
+																		</body>
+																	</html>
+																`);
+															}
+														}}
+														class="absolute bottom-0 left-0 bg-gray-800/80 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-tl-lg rounded-br-lg hover:bg-gray-900/90 transition-all duration-150 shadow-md border border-gray-700/50"
+														title="Ver preview completo"
+													>
+														Preview
+													</button>
+												)}
+											</div>
+
+											{/* Información del usuario */}
+											<div class="flex-1 min-w-0">
+												<div class="mb-1">
+													<h3 class="text-base sm:text-lg font-bold text-gray-900 truncate">
+														{userProfile?.full_name || 'Usuario'}
+													</h3>
+												</div>
+												<div class="mb-4">
+													<p class="text-sm text-indigo-600 font-medium">
+														{userProfile?.email || 'Sin email'}
+													</p>
+												</div>
+
+												{/* Controles de upload */}
+												<div class="flex flex-col sm:flex-row gap-2 flex-wrap">
+													<label class="cursor-pointer inline-flex">
+														<input
+															ref={fileInputRef}
+															type="file"
+															accept="image/jpeg,image/jpg,image/png,image/webp"
+															onChange={handleFileSelect}
+															class="hidden"
+														/>
+														<span class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-700 bg-white border border-indigo-300 rounded-lg hover:bg-indigo-50 transition-all duration-150 shadow-sm hover:shadow">
+															<svg
+																class="w-4 h-4"
+																fill="none"
+																stroke="currentColor"
+																viewBox="0 0 24 24"
+															>
+																<path
+																	stroke-linecap="round"
+																	stroke-linejoin="round"
+																	stroke-width="2"
+																	d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+																/>
+															</svg>
+															Cambiar Foto
+														</span>
+													</label>
+
+													{avatarPreview && avatarPreview.includes('data:') && (
+														<>
+															<Button
+																onClick={handleAvatarUpload}
+																disabled={isUploadingAvatar}
+																loading={isUploadingAvatar}
+																variant="primary"
+																size="sm"
+																uppercase={false}
+																className="gap-2 font-normal"
+															>
+																<svg
+																	class="w-4 h-4"
+																	fill="none"
+																	stroke="currentColor"
+																	viewBox="0 0 24 24"
+																>
+																	<path
+																		stroke-linecap="round"
+																		stroke-linejoin="round"
+																		stroke-width="2"
+																		d="M5 13l4 4L19 7"
+																	/>
+																</svg>
+																Guardar
+															</Button>
+
+															<Button
+																onClick={() => {
+																	setAvatarPreview(userProfile?.avatar_url || null);
+																	if (fileInputRef.current) {
+																		fileInputRef.current.value = '';
+																	}
+																}}
+																variant="outline"
+																size="sm"
+																uppercase={false}
+																className="gap-2 font-normal"
+															>
+																<svg
+																	class="w-4 h-4"
+																	fill="none"
+																	stroke="currentColor"
+																	viewBox="0 0 24 24"
+																>
+																	<path
+																		stroke-linecap="round"
+																		stroke-linejoin="round"
+																		stroke-width="2"
+																		d="M6 18L18 6M6 6l12 12"
+																	/>
+																</svg>
+																Cancelar
+															</Button>
+														</>
+													)}
+
+													{userProfile?.avatar_url && !avatarPreview?.includes('data:') && (
+														<Button
+															onClick={handleAvatarRemove}
+															disabled={isUploadingAvatar}
+															variant="danger"
+															size="sm"
+															uppercase={false}
+															className="gap-2 font-normal"
+														>
+															<svg
+																class="w-4 h-4"
+																fill="none"
+																stroke="currentColor"
+																viewBox="0 0 24 24"
+															>
+																<path
+																	stroke-linecap="round"
+																	stroke-linejoin="round"
+																	stroke-width="2"
+																	d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+																/>
+															</svg>
+															Eliminar
+														</Button>
+													)}
+												</div>
+
+												<p class="mt-2 text-xs text-gray-600">
+													Formatos permitidos: JPEG, PNG, WebP. Tamaño máximo: 5MB
+												</p>
+											</div>
+										</div>
+									</div>
+								</div>
+
 								<div>
 									<label class="block text-sm font-medium text-gray-700 mb-2">
 										Nombre Completo
@@ -371,27 +754,20 @@ export default function AdminSettings({}: AdminSettingsProps) {
 									</p>
 								</div>
 								<div class="flex justify-end pt-2">
-									<button
+									<Button
 										onClick={handleSaveProfile}
 										disabled={isLoading}
-										class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-md transition-all duration-150 shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+										loading={isLoading}
+										variant="primary"
+										size="sm"
+										uppercase={false}
+										className="gap-2 font-normal"
 									>
-										{isLoading ? (
-											<>
-												<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-												</svg>
-												Guardando...
-											</>
-										) : (
-											<>
-												<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-												</svg>
-												Guardar Cambios
-											</>
-										)}
-									</button>
+										<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+										</svg>
+										Guardar Cambios
+									</Button>
 								</div>
 							</div>
 						</div>
@@ -489,28 +865,21 @@ export default function AdminSettings({}: AdminSettingsProps) {
 									)}
 								</div>
 								<div class="flex justify-end pt-2">
-									<button
+									<Button
 										onClick={handleChangePassword}
 										disabled={isLoading}
-										class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium text-sm rounded-md transition-all duration-150 shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+										loading={isLoading}
+										variant="primary"
+										size="sm"
+										uppercase={false}
+										className="gap-2 font-normal"
 									>
-										{isLoading ? (
-											<>
-												<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-												</svg>
-												Actualizando...
-											</>
-										) : (
-											<>
-												<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-												</svg>
-												Actualizar Contraseña
-											</>
-									)}
-								</button>
-							</div>
+										<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+										</svg>
+										Actualizar Contraseña
+									</Button>
+								</div>
 								</div>
 							)}
 						</div>
@@ -789,42 +1158,25 @@ export default function AdminSettings({}: AdminSettingsProps) {
 				{/* Botón de Guardar Configuración del Sistema */}
 				{(expandedSections.businessHours || expandedSections.slots || expandedSections.general) && (
 					<div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
-					<button
+					<Button
 						onClick={handleSaveSettings}
 						disabled={isLoading}
-						class="px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-medium text-sm sm:text-base rounded-lg transition-all duration-150 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+						loading={isLoading}
+						variant="primary"
+						size="md"
+						uppercase={false}
+						className="gap-2 font-normal"
 					>
-						{isLoading ? (
-							<>
-								<svg
-									class="w-4 h-4 sm:w-5 sm:h-5 animate-spin"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-									/>
-								</svg>
-								Guardando...
-							</>
-						) : (
-							<>
-								<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M5 13l4 4L19 7"
-									/>
-								</svg>
-								Guardar Configuración
-							</>
-						)}
-					</button>
+						<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M5 13l4 4L19 7"
+							/>
+						</svg>
+						Guardar Configuración
+					</Button>
 					</div>
 				)}
 			</div>
