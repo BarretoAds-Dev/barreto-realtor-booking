@@ -7,7 +7,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "deploy": "pnpm run build && wrangler deploy",
+    "deploy": "pnpm run build && pnpm run github && wrangler deploy",
     "deploy:preview": "pnpm run build && wrangler deploy --env preview",
     "cf:dev": "pnpm run build && wrangler dev",
     "github": "git add . && git commit -m \"Deploy: $(date +'%Y-%m-%d %H:%M:%S')\" && git push origin HEAD",

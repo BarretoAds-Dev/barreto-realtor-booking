@@ -2,6 +2,7 @@
 import { easybrokerConfig } from '@/1-app-global-core/config';
 import type { EasyBrokerProperty } from '@/1-app-global-core/types/easybroker';
 import { getEasyBrokerPropertyUrl } from '@/1-app-global-core/utils';
+import { showToast } from '@/components/ui';
 import type { JSX } from 'preact';
 import { useCallback, useEffect, useState } from 'preact/hooks';
 import { useProperties } from '@/2-app-crm/3-Dashboard-Propiedades/hooks/useProperties';
@@ -206,26 +207,48 @@ export function PropertiesDashboard({
                   onGetAppointmentLink={async (prop) => {
                     try {
                       const baseUrl = window.location.origin;
-                      const appointmentLink = `${baseUrl}/citas?propertyId=${prop.public_id}`;
+
+                      // Determinar el tipo de operación desde la propiedad
+                      let operationTypeParam = '';
+                      if (prop.operations && prop.operations.length > 0) {
+                        const operationType = prop.operations[0].type.toLowerCase();
+                        if (operationType === 'rental' || operationType.includes('rent') || operationType.includes('renta')) {
+                          operationTypeParam = '&operationType=rent';
+                        } else if (operationType === 'sale' || operationType.includes('sale') || operationType.includes('venta')) {
+                          operationTypeParam = '&operationType=sale';
+                        }
+                      }
+
+                      const appointmentLink = `${baseUrl}/citas/booking?propertyId=${prop.public_id}${operationTypeParam}`;
 
                       // Copiar el enlace al portapapeles para compartirlo con el cliente
                       try {
                         await navigator.clipboard.writeText(appointmentLink);
-                        alert(
-                          '✅ Link de cita copiado al portapapeles:\n' +
-                            appointmentLink +
-                            '\n\nPuedes compartir este enlace con tu cliente para que agende su cita.'
-                        );
+                        showToast({
+                          message: 'Link de cita copiado',
+                          description: 'El enlace ha sido copiado al portapapeles. Puedes compartirlo con tu cliente para que agende su cita.',
+                          type: 'success',
+                          link: appointmentLink,
+                          duration: 6000,
+                        });
                       } catch (clipboardError) {
-                        // Fallback: mostrar el link en un prompt
-                        prompt(
-                          'Link de cita (copia este link para compartirlo con tu cliente):',
-                          appointmentLink
-                        );
+                        // Fallback: mostrar el link en la notificación sin copiar
+                        showToast({
+                          message: 'Link de cita generado',
+                          description: 'Copia este enlace para compartirlo con tu cliente:',
+                          type: 'info',
+                          link: appointmentLink,
+                          duration: 8000,
+                        });
                       }
                     } catch (error) {
                       console.error('Error al generar link de cita:', error);
-                      alert('No se pudo generar el link de cita.');
+                      showToast({
+                        message: 'Error al generar link',
+                        description: 'No se pudo generar el link de cita. Por favor, intenta nuevamente.',
+                        type: 'error',
+                        duration: 5000,
+                      });
                     }
                   }}
                   onDownloadSheet={async (prop) => {

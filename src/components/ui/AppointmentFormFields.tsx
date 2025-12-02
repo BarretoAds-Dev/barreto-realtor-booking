@@ -27,6 +27,7 @@ interface AppointmentFormFieldsProps {
   ) => void; // Callback para validación en tiempo real
   variant?: 'light' | 'dark'; // Variante de estilo
   allowedOperationType?: 'rentar' | 'comprar' | null; // Si está definido, solo mostrar esta opción
+  initialOperationType?: 'rentar' | 'comprar'; // Valor inicial para filtrar opciones
 }
 
 export default function AppointmentFormFields({
@@ -43,6 +44,7 @@ export default function AppointmentFormFields({
   onBudgetChange,
   variant = 'dark',
   allowedOperationType = null,
+  initialOperationType,
 }: AppointmentFormFieldsProps) {
   const handleBudgetChange = (
     fieldName: 'budgetRentar' | 'budgetComprar',
@@ -53,9 +55,14 @@ export default function AppointmentFormFields({
     }
   };
 
-  // Filtrar opciones de operación basado en allowedOperationType
-  const availableOperationTypes = allowedOperationType
-    ? OPERATION_TYPES.filter((opt) => opt.value === allowedOperationType)
+  // Filtrar opciones de operación basado en initialOperationType o allowedOperationType
+  // Prioridad: allowedOperationType > initialOperationType > todas las opciones
+  // allowedOperationType tiene prioridad porque viene del CRM/preselectedProperty (más específico)
+  // initialOperationType viene de la URL/EasyBroker (menos específico)
+  const effectiveFilter = allowedOperationType ?? initialOperationType ?? null;
+
+  const availableOperationTypes = effectiveFilter
+    ? OPERATION_TYPES.filter((opt) => opt.value === effectiveFilter)
     : OPERATION_TYPES;
 
   return (

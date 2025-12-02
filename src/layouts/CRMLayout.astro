@@ -1,4 +1,5 @@
 ---
+import { ToastContainer } from '@/components/ui/ToastContainer';
 ---
 <!doctype html>
 <html lang="es">
@@ -46,5 +47,6 @@
 	</head>
 	<body class="bg-gray-50" style="margin: 0 !important; padding: 0 !important; width: 100%; height: 100%;">
 		<slot />
+		<ToastContainer client:load />
 	</body>
 </html>

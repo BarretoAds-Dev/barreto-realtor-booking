@@ -29,9 +29,12 @@ interface AppointmentFormProps {
     address?: string;
     price?: number;
     image?: string;
+    operations?: Array<{ type: string; amount: number }>;
   } | null;
   onBack: () => void;
   onSubmit: (data: any) => void;
+  allowedOperationType?: 'rentar' | 'comprar' | null; // Si viene definido, usarlo directamente
+  initialOperationType?: 'rentar' | 'comprar'; // Valor inicial para el estado del formulario
 }
 
 // Componente para selector de propiedades agrupadas por colonia
@@ -139,6 +142,8 @@ export default function AppointmentForm({
   selectedProperty: preselectedProperty,
   onBack,
   onSubmit,
+  allowedOperationType: propAllowedOperationType,
+  initialOperationType,
 }: AppointmentFormProps) {
   const {
     operationType,
@@ -158,6 +163,7 @@ export default function AppointmentForm({
     selectedDate,
     selectedTime,
     formId: 'appointmentForm',
+    initialOperationType,
   });
 
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>(
@@ -256,30 +262,51 @@ export default function AppointmentForm({
     : 0;
 
   // Determinar el tipo de operación permitido basado en la propiedad seleccionada
-  const getAllowedOperationType = (): 'rentar' | 'comprar' | null => {
-    if (!currentSelectedProperty) return null;
+  // Prioridad: propAllowedOperationType (CRM/preselectedProperty) > initialOperationType (URL/EasyBroker) > calcular desde propiedad
+  const allowedOperationType = useMemo((): 'rentar' | 'comprar' | null => {
+    // Prioridad 1: Si viene definido como prop (desde CRM o preselectedProperty), usarlo directamente
+    if (propAllowedOperationType) return propAllowedOperationType;
 
-    // Si es una propiedad preseleccionada, no tenemos operations, así que permitimos ambas
-    if (preselectedProperty) return null;
+    // Prioridad 2: Si viene initialOperationType (desde URL/EasyBroker), usarlo
+    if (initialOperationType) return initialOperationType;
+
+    // Prioridad 3: Si es una propiedad preseleccionada, verificar sus operations
+    if (preselectedProperty && preselectedProperty.operations && preselectedProperty.operations.length > 0) {
+      const operationType = preselectedProperty.operations[0].type.toLowerCase();
+      // Detectar renta: rental, rent, renta
+      if (operationType === 'rental' || operationType.includes('rent') || operationType.includes('renta')) {
+        return 'rentar';
+      }
+      // Detectar venta: sale, venta
+      if (operationType === 'sale' || operationType.includes('sale') || operationType.includes('venta')) {
+        return 'comprar';
+      }
+    }
+
+    if (!currentSelectedProperty) return null;
 
     const property = currentSelectedProperty as Property;
     if (property.operations && property.operations.length > 0) {
       const operationType = property.operations[0].type.toLowerCase();
-      if (operationType.includes('rent') || operationType.includes('renta')) {
+      // Detectar renta: rental, rent, renta
+      if (operationType === 'rental' || operationType.includes('rent') || operationType.includes('renta')) {
         return 'rentar';
       }
-      if (operationType.includes('sale') || operationType.includes('venta')) {
+      // Detectar venta: sale, venta
+      if (operationType === 'sale' || operationType.includes('sale') || operationType.includes('venta')) {
         return 'comprar';
       }
     }
     return null;
-  };
+  }, [propAllowedOperationType, initialOperationType, preselectedProperty, currentSelectedProperty]);
 
-  const allowedOperationType = getAllowedOperationType();
-
-  // Actualizar operationType automáticamente cuando se selecciona una propiedad
+  // Actualizar operationType automáticamente cuando se selecciona una propiedad o hay initialOperationType/allowedOperationType
   useEffect(() => {
-    if (allowedOperationType && operationType !== allowedOperationType) {
+    // Prioridad: allowedOperationType > initialOperationType
+    // allowedOperationType puede venir de propAllowedOperationType (CRM) o calcularse desde initialOperationType
+    const targetOperationType = allowedOperationType || initialOperationType;
+
+    if (targetOperationType && operationType !== targetOperationType) {
       // Limpiar el error inmediatamente antes de actualizar
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -288,35 +315,10 @@ export default function AppointmentForm({
       });
 
       // Actualizar el estado usando handleRadioChange
-      handleRadioChange('operationType', allowedOperationType);
-
-      // Actualizar el radio button en el DOM para sincronización
-      setTimeout(() => {
-        const form = document.getElementById(
-          'appointmentForm'
-        ) as HTMLFormElement;
-        if (form) {
-          // Desmarcar todos los radios primero
-          const allRadios = form.querySelectorAll(
-            'input[name="operationType"]'
-          ) as NodeListOf<HTMLInputElement>;
-          allRadios.forEach((radio) => {
-            radio.checked = false;
-          });
-
-          // Marcar el radio correcto
-          const targetRadio = form.querySelector(
-            `input[name="operationType"][value="${allowedOperationType}"]`
-          ) as HTMLInputElement;
-          if (targetRadio) {
-            targetRadio.checked = true;
-            // Disparar evento change para que Preact lo detecte
-            targetRadio.dispatchEvent(new Event('change', { bubbles: true }));
-          }
-        }
-      }, 0);
+      handleRadioChange('operationType', targetOperationType);
     }
-  }, [allowedOperationType, selectedPropertyId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialOperationType, allowedOperationType, selectedPropertyId]);
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
@@ -519,32 +521,8 @@ export default function AppointmentForm({
           </FormField>
         )}
 
-        {/* Mostrar propiedad preseleccionada */}
-        {preselectedProperty && (
-          <div class="bg-gray-50 border border-gray-200 rounded-md p-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Propiedad seleccionada
-            </label>
-            <div class="space-y-1">
-              <p class="text-sm font-semibold text-gray-900">
-                {preselectedProperty.title}
-              </p>
-              <p class="text-xs text-gray-600">
-                {preselectedProperty.location ||
-                  preselectedProperty.address ||
-                  ''}
-              </p>
-              {preselectedProperty.price && preselectedProperty.price > 0 && (
-                <p class="text-sm font-medium text-gray-900">
-                  {new Intl.NumberFormat('es-MX', {
-                    style: 'currency',
-                    currency: 'MXN',
-                  }).format(preselectedProperty.price)}
-                </p>
-              )}
-            </div>
-          </div>
-        )}
+        {/* Mostrar propiedad preseleccionada solo si no está en la parte superior */}
+        {/* La información del inmueble ya se muestra en la parte superior y en el paso de fechas */}
 
         <FormField
           label="Nombre completo"
@@ -621,6 +599,7 @@ export default function AppointmentForm({
           propertyPrice={propertyPrice}
           variant="light"
           allowedOperationType={allowedOperationType}
+          initialOperationType={initialOperationType}
           onBudgetChange={(fieldName, value) => {
             // Validar presupuesto en tiempo real
             if (!value) {

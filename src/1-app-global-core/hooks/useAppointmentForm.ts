@@ -5,15 +5,17 @@ interface UseAppointmentFormProps {
   selectedDate: Date | string | null;
   selectedTime: string | null;
   formId: string;
+  initialOperationType?: 'rentar' | 'comprar';
 }
 
 export function useAppointmentForm({
   selectedDate,
   selectedTime,
   formId,
+  initialOperationType,
 }: UseAppointmentFormProps) {
   const [operationType, setOperationType] = useState<'rentar' | 'comprar' | ''>(
-    ''
+    initialOperationType || ''
   );
   const [resourceType, setResourceType] = useState('');
   const [creditoPreaprobado, setCreditoPreaprobado] = useState<string>('');

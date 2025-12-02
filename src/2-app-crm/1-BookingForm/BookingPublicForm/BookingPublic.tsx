@@ -4,16 +4,16 @@ import type {
   AppointmentStep,
   AvailableSlot,
 } from '@/1-app-global-core/types/appointment';
-import AppointmentFormCRM from '@/2-app-crm/4-Dashboard-CitasyClientes/components/AppointmentFormCRM';
-import CalendarCRM from '@/2-app-crm/4-Dashboard-CitasyClientes/components/CalendarCRM';
-import TimeSlotsCRM from '@/2-app-crm/4-Dashboard-CitasyClientes/components/TimeSlotsCRM';
-import { render } from 'preact';
-import { useEffect, useMemo, useState } from 'preact/hooks';
 import AppointmentForm from '@/2-app-crm/1-BookingForm/BookingPublicForm/ui-bookingpublic/AppointmentForm';
 import Calendar from '@/2-app-crm/1-BookingForm/BookingPublicForm/ui-bookingpublic/Calendar';
 import ConfirmationPanel from '@/2-app-crm/1-BookingForm/BookingPublicForm/ui-bookingpublic/ConfirmationPanel';
 import ProgressIndicator from '@/2-app-crm/1-BookingForm/BookingPublicForm/ui-bookingpublic/ProgressIndicator';
 import TimeSlots from '@/2-app-crm/1-BookingForm/BookingPublicForm/ui-bookingpublic/TimeSlots';
+import AppointmentFormCRM from '@/2-app-crm/4-Dashboard-CitasyClientes/components/AppointmentFormCRM';
+import CalendarCRM from '@/2-app-crm/4-Dashboard-CitasyClientes/components/CalendarCRM';
+import TimeSlotsCRM from '@/2-app-crm/4-Dashboard-CitasyClientes/components/TimeSlotsCRM';
+import { render } from 'preact';
+import { useEffect, useMemo, useState } from 'preact/hooks';
 
 type Step = AppointmentStep;
 
@@ -33,8 +33,10 @@ interface BookingPublicProps {
     price: number;
     property_type: string;
     operations?: Array<{ type: string; amount: number }>;
+    image?: string;
   } | null;
   allowedOperationType?: 'rentar' | 'comprar' | null;
+  initialOperationType?: 'rentar' | 'comprar'; // Valor inicial para el formulario
   // Determinar si usar formulario CRM o público
   useCRMForm?: boolean;
   // Determinar si mostrar confirmación (solo para público)
@@ -50,6 +52,7 @@ export default function BookingPublic({
   onSuccess,
   preselectedProperty,
   allowedOperationType,
+  initialOperationType,
   useCRMForm = false,
   showConfirmation = true,
 }: BookingPublicProps) {
@@ -65,6 +68,39 @@ export default function BookingPublic({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [modalRoot, setModalRoot] = useState<HTMLElement | null>(null);
   const [isLoadingProperty, setIsLoadingProperty] = useState(false);
+
+  // Calcular allowedOperationType basado en preselectedProperty
+  const calculatedAllowedOperationType = useMemo(() => {
+    // Si ya viene definido como prop, usarlo
+    if (allowedOperationType) return allowedOperationType;
+
+    // Si hay preselectedProperty con operations, calcularlo
+    if (
+      preselectedProperty?.operations &&
+      preselectedProperty.operations.length > 0
+    ) {
+      const operationType =
+        preselectedProperty.operations[0].type.toLowerCase();
+      // Detectar renta: rental, rent, renta
+      if (
+        operationType === 'rental' ||
+        operationType.includes('rent') ||
+        operationType.includes('renta')
+      ) {
+        return 'rentar';
+      }
+      // Detectar venta: sale, venta
+      if (
+        operationType === 'sale' ||
+        operationType.includes('sale') ||
+        operationType.includes('venta')
+      ) {
+        return 'comprar';
+      }
+    }
+
+    return null;
+  }, [preselectedProperty, allowedOperationType]);
 
   // Encontrar slots para la fecha seleccionada
   const slotsForSelectedDate = useMemo(() => {
@@ -305,6 +341,20 @@ export default function BookingPublic({
     };
   }, [showConfirmation]);
 
+  // Cargar slots automáticamente cuando se abre el modal desde el CRM
+  useEffect(() => {
+    if (
+      isModal &&
+      useCRMForm &&
+      isOpen &&
+      availableSlots.length === 0 &&
+      !isRefreshing
+    ) {
+      refreshAvailability();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isModal, useCRMForm, isOpen]);
+
   // Manejar el portal del modal
   useEffect(() => {
     if (!isModal) return;
@@ -418,13 +468,48 @@ export default function BookingPublic({
         >
           <div class={isModal ? '' : 'p-6 md:p-8 lg:p-10'}>
             {currentStep === 1 && (
-              <CalendarComponent
-                availableSlots={availableSlots}
-                onDateSelect={handleDateSelect}
-                selectedDate={
-                  selectedDate ? parseDateLocal(selectedDate) : null
-                }
-              />
+              <>
+                {isModal &&
+                useCRMForm &&
+                isRefreshing &&
+                availableSlots.length === 0 ? (
+                  <div class="flex flex-col items-center justify-center py-12">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4"></div>
+                    <p class="text-gray-600 text-sm">
+                      Cargando disponibilidad...
+                    </p>
+                  </div>
+                ) : (
+                  <CalendarComponent
+                    availableSlots={availableSlots}
+                    onDateSelect={handleDateSelect}
+                    selectedDate={
+                      selectedDate ? parseDateLocal(selectedDate) : null
+                    }
+                    selectedProperty={
+                      preselectedProperty
+                        ? {
+                            id: preselectedProperty.id,
+                            title: preselectedProperty.title,
+                            location: preselectedProperty.address,
+                            address: preselectedProperty.address,
+                            price: preselectedProperty.price,
+                            image: preselectedProperty.image,
+                          }
+                        : selectedProperty
+                        ? {
+                            id: selectedProperty.id,
+                            title: selectedProperty.title,
+                            location: selectedProperty.location,
+                            address: selectedProperty.address,
+                            price: selectedProperty.price,
+                            image: selectedProperty.image,
+                          }
+                        : null
+                    }
+                  />
+                )}
+              </>
             )}
 
             {currentStep === 2 && (
@@ -477,7 +562,7 @@ export default function BookingPublic({
                     }
                     selectedTime={selectedTime}
                     preselectedProperty={preselectedProperty}
-                    allowedOperationType={allowedOperationType}
+                    allowedOperationType={calculatedAllowedOperationType}
                     onBack={handleBackToTime}
                     onSubmit={handleFormSubmit}
                   />
@@ -487,9 +572,23 @@ export default function BookingPublic({
                       selectedDate ? parseDateLocal(selectedDate) : null
                     }
                     selectedTime={selectedTime}
-                    selectedProperty={selectedProperty}
+                    selectedProperty={
+                      preselectedProperty
+                        ? {
+                            id: preselectedProperty.id,
+                            title: preselectedProperty.title,
+                            location: preselectedProperty.address,
+                            address: preselectedProperty.address,
+                            price: preselectedProperty.price,
+                            image: preselectedProperty.image,
+                            operations: preselectedProperty.operations,
+                          }
+                        : selectedProperty
+                    }
                     onBack={handleBackToTime}
                     onSubmit={handleFormSubmit}
+                    allowedOperationType={calculatedAllowedOperationType}
+                    initialOperationType={initialOperationType}
                   />
                 )}
               </>

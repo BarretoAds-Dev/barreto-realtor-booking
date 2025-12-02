@@ -1,0 +1,140 @@
+---
+import type { EasyBrokerProperty, EasyBrokerPropertyResponse } from '@/1-app-global-core/types/easybroker';
+import BookingWelcome from '@/2-app-crm/1-BookingForm/components/BookingWelcome.astro';
+import PropertyCardPreview from '@/components/ui/PropertyCardPreview.astro';
+import Layout from '@/layouts/Layout.astro';
+
+// 🔧 Configuración por defecto (puede venir de Supabase en el futuro)
+const config = {
+	slotDuration: 45,
+	bufferTime: 5,
+	businessHours: {}
+};
+
+// 🏠 Obtener información del inmueble si hay propertyId en la URL
+let property: EasyBrokerProperty | null = null;
+let initialOperationType: 'rentar' | 'comprar' | undefined = undefined;
+const propertyId = Astro.url.searchParams.get('propertyId');
+const operationTypeFromUrl = Astro.url.searchParams.get('operationType'); // rent | sale
+
+// Prioridad 1: Si viene operationType en la URL, usarlo directamente
+if (operationTypeFromUrl) {
+	if (operationTypeFromUrl === 'rent' || operationTypeFromUrl === 'rental' || operationTypeFromUrl === 'renta') {
+		initialOperationType = 'rentar';
+	} else if (operationTypeFromUrl === 'sale' || operationTypeFromUrl === 'venta') {
+		initialOperationType = 'comprar';
+	}
+}
+
+if (propertyId) {
+	try {
+		const baseUrl = import.meta.env.DEV
+			? 'http://localhost:4321'
+			: (import.meta.env.SITE || import.meta.env.PUBLIC_SITE_URL || '');
+
+		if (baseUrl) {
+			const response = await fetch(`${baseUrl}/api/easybroker/properties/${propertyId}`, {
+				headers: import.meta.env.DEV ? {} : { 'Cache-Control': 'no-cache' }
+			});
+
+			if (response.ok) {
+				const data = (await response.json()) as EasyBrokerPropertyResponse;
+				property = data.property || null;
+
+				// Prioridad 2: Si no hay operationType en la URL, inferirlo desde el texto de la propiedad
+				if (!initialOperationType && property) {
+					// Combinar operation type y título para detectar el tipo de operación
+					const operationType = property.operations?.[0]?.type?.toLowerCase() || '';
+					const title = property.title?.toLowerCase() || '';
+					const text = `${operationType} ${title}`;
+
+					if (text.includes('renta') || text.includes('rent') || text.includes('rental')) {
+						initialOperationType = 'rentar';
+					} else if (text.includes('venta') || text.includes('sale') || text.includes('comprar')) {
+						initialOperationType = 'comprar';
+					}
+				}
+			} else {
+				if (import.meta.env.DEV) {
+					console.warn('⚠️ Error al cargar propiedad:', response.status, response.statusText);
+				}
+			}
+		}
+	} catch (error) {
+		// Silenciar errores durante build
+		if (import.meta.env.DEV) {
+			console.warn('❌ Error al cargar información del inmueble:', error);
+		}
+	}
+}
+
+// 🚀 Cargar disponibilidad desde API de Supabase
+// Solo intentar fetch en runtime, no durante build
+let filteredSlots: any[] = [];
+
+// Solo hacer fetch si estamos en modo desarrollo o producción con servidor disponible
+if (import.meta.env.DEV || import.meta.env.PUBLIC_SUPABASE_URL) {
+	try {
+		const startDate = new Date().toISOString().split('T')[0];
+		const endDate = new Date();
+		endDate.setMonth(endDate.getMonth() + 6);
+		const endDateStr = endDate.toISOString().split('T')[0];
+
+		// En desarrollo, usar localhost; en producción, usar la URL del sitio
+		const baseUrl = import.meta.env.DEV
+			? 'http://localhost:4321'
+			: (import.meta.env.SITE || import.meta.env.PUBLIC_SITE_URL || '');
+
+		if (baseUrl) {
+			const response = await fetch(`${baseUrl}/api/appointments/available?start=${startDate}&end=${endDateStr}`, {
+				// Solo en desarrollo, permitir fetch durante SSR
+				// En producción, esto se hará en el cliente
+				headers: import.meta.env.DEV ? {} : { 'Cache-Control': 'no-cache' }
+			});
+
+			if (response.ok) {
+				filteredSlots = await response.json();
+			}
+		}
+	} catch (error) {
+		// Silenciar errores durante build - los slots se cargarán en el cliente
+		if (import.meta.env.DEV) {
+			console.warn('Error al cargar disponibilidad desde API:', error);
+		}
+	}
+}
+---
+
+<Layout>
+	<div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+		<div class="max-w-5xl mx-auto">
+			<!-- Header -->
+			<div class="text-center mb-8">
+				<div class="inline-flex items-center justify-center w-16 h-16 bg-gray-900 rounded-xl mb-4 shadow-sm">
+					<svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+					</svg>
+				</div>
+				<h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Reserva tu cita</h1>
+				<p class="text-gray-500 text-base sm:text-lg max-w-2xl mx-auto">
+					Selecciona una fecha y hora que funcione para ti. El proceso es rápido y sencillo.
+				</p>
+			</div>
+
+			<!-- Mostrar información del inmueble si está disponible - Renderizado en servidor -->
+			{property && (
+				<PropertyCardPreview property={property} />
+			)}
+
+			<!-- Formulario de reserva -->
+			<BookingWelcome
+				availableSlots={filteredSlots}
+				config={config}
+				property={property}
+				initialOperationType={initialOperationType}
+				client:visible
+			/>
+		</div>
+	</div>
+</Layout>
+

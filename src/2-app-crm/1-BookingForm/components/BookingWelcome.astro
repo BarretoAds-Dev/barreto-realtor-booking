@@ -1,4 +1,5 @@
 ---
+import type { EasyBrokerProperty } from '@/1-app-global-core/types/easybroker';
 import BookingPublic from '@/2-app-crm/1-BookingForm/BookingPublicForm/BookingPublic';
 
 interface Props {
@@ -21,37 +22,34 @@ interface Props {
 		bufferTime: number;
 		businessHours: Record<string, any>;
 	};
+	property?: EasyBrokerProperty | null;
+	initialOperationType?: 'rentar' | 'comprar';
+	allowedOperationType?: 'rentar' | 'comprar' | null; // Mantener para compatibilidad
 }
 
-const { availableSlots, config } = Astro.props;
+const { availableSlots, config, property, initialOperationType, allowedOperationType } = Astro.props;
 ---
 
-<div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-	<div class="max-w-5xl mx-auto">
-		<!-- Header -->
-		<div class="text-center mb-8">
-			<div class="inline-flex items-center justify-center w-16 h-16 bg-gray-900 rounded-xl mb-4 shadow-sm">
-				<svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-				</svg>
-			</div>
-			<h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Reserva tu cita</h1>
-			<p class="text-gray-500 text-base sm:text-lg max-w-2xl mx-auto">
-				Selecciona una fecha y hora que funcione para ti. El proceso es rápido y sencillo.
-			</p>
-		</div>
-
-		<!-- client:visible - Se carga cuando entra en viewport (optimización Islands) -->
-		<BookingPublic
-			availableSlots={availableSlots}
-			config={config}
-			isModal={false}
-			showConfirmation={true}
-			useCRMForm={false}
-			client:visible
-		/>
-	</div>
-</div>
+<!-- Este componente ahora solo renderiza el formulario, el header y la tarjeta del inmueble se renderizan en la página principal -->
+<BookingPublic
+	availableSlots={availableSlots}
+	config={config}
+	isModal={false}
+	showConfirmation={true}
+	useCRMForm={false}
+	preselectedProperty={property ? {
+		id: property.public_id,
+		title: property.title,
+		address: typeof property.location === 'string' ? property.location : property.location?.address || '',
+		price: property.operations?.[0]?.amount || 0,
+		property_type: property.property_type,
+		operations: property.operations,
+		image: property.title_image_full || property.title_image_thumb || property.images?.[0]?.url || undefined,
+	} : null}
+	initialOperationType={initialOperationType}
+	allowedOperationType={allowedOperationType || (initialOperationType ? initialOperationType : null)}
+	client:visible
+/>
 
 <style>
 	/* Estilos para los select dropdowns */
@@ -91,6 +89,17 @@ const { availableSlots, config } = Astro.props;
 			opacity: 1;
 			transform: translateY(0);
 		}
+	}
+
+	.animate-fadeIn {
+		animation: fadeIn 0.4s ease-out;
+	}
+
+	.line-clamp-2 {
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
 	}
 </style>
 

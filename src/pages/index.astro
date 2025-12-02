@@ -1,5 +1,19 @@
 ---
-// Redirigir a la página de registro (página principal)
-return Astro.redirect('/register', 301);
+import LoginForm from '@/components/ui/LoginForm';
 ---
+
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Iniciar Sesión - Barreto Realtor</title>
+	</head>
+	<body>
+		<!-- client:load - Crítico para UX: se carga inmediatamente -->
+		<LoginForm client:load />
+	</body>
+</html>
 

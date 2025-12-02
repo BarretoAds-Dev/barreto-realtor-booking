@@ -152,10 +152,12 @@ export default function AppointmentFormCRM({
     ) {
       const operationType =
         preselectedProperty.operations[0].type.toLowerCase();
-      if (operationType.includes('rent') || operationType.includes('renta')) {
+      // Detectar renta: rental, rent, renta
+      if (operationType === 'rental' || operationType.includes('rent') || operationType.includes('renta')) {
         return 'rentar';
       }
-      if (operationType.includes('sale') || operationType.includes('venta')) {
+      // Detectar venta: sale, venta
+      if (operationType === 'sale' || operationType.includes('sale') || operationType.includes('venta')) {
         return 'comprar';
       }
     }
@@ -182,22 +184,38 @@ export default function AppointmentFormCRM({
   const propertyPrice = selectedProperty?.price || 0;
 
   // Determinar el tipo de operación permitido basado en la propiedad seleccionada
-  const getAllowedOperationType = (): 'rentar' | 'comprar' | null => {
-    if (!selectedProperty) return null;
-
+  const allowedOperationTypeFromProperty = useMemo((): 'rentar' | 'comprar' | null => {
     // Si es una propiedad preseleccionada, usar allowedOperationType si está disponible
-    if (preselectedProperty && allowedOperationType)
+    if (preselectedProperty && allowedOperationType) {
       return allowedOperationType;
+    }
+
+    // Si hay una propiedad preseleccionada con operations, calcular desde ahí
+    if (preselectedProperty && preselectedProperty.operations && preselectedProperty.operations.length > 0) {
+      const operationType = preselectedProperty.operations[0].type.toLowerCase();
+      // Detectar renta: rental, rent, renta
+      if (operationType === 'rental' || operationType.includes('rent') || operationType.includes('renta')) {
+        return 'rentar';
+      }
+      // Detectar venta: sale, venta
+      if (operationType === 'sale' || operationType.includes('sale') || operationType.includes('venta')) {
+        return 'comprar';
+      }
+    }
+
+    if (!selectedProperty) return null;
 
     // Si no hay allowedOperationType, intentar determinar desde la propiedad
     // Para propiedades de Easy Broker, buscar en operations
     const property = selectedProperty as any;
     if (property.operations && property.operations.length > 0) {
       const operationType = property.operations[0].type.toLowerCase();
-      if (operationType.includes('rent') || operationType.includes('renta')) {
+      // Detectar renta: rental, rent, renta
+      if (operationType === 'rental' || operationType.includes('rent') || operationType.includes('renta')) {
         return 'rentar';
       }
-      if (operationType.includes('sale') || operationType.includes('venta')) {
+      // Detectar venta: sale, venta
+      if (operationType === 'sale' || operationType.includes('sale') || operationType.includes('venta')) {
         return 'comprar';
       }
     }
@@ -206,9 +224,7 @@ export default function AppointmentFormCRM({
     if (allowedOperationType) return allowedOperationType;
 
     return null;
-  };
-
-  const allowedOperationTypeFromProperty = getAllowedOperationType();
+  }, [preselectedProperty, selectedProperty, allowedOperationType]);
 
   // Helper: Parsear valor mínimo de un rango de presupuesto
   const getMinBudgetFromRange = (range: string): number => {
@@ -595,32 +611,6 @@ export default function AppointmentFormCRM({
 
       // Actualizar el estado usando handleRadioChange
       handleRadioChange('operationType', allowedOperationTypeFromProperty);
-
-      // Actualizar el radio button en el DOM para sincronización
-      setTimeout(() => {
-        const form = document.getElementById(
-          'appointmentFormCRM'
-        ) as HTMLFormElement;
-        if (form) {
-          // Desmarcar todos los radios primero
-          const allRadios = form.querySelectorAll(
-            'input[name="operationType"]'
-          ) as NodeListOf<HTMLInputElement>;
-          allRadios.forEach((radio) => {
-            radio.checked = false;
-          });
-
-          // Marcar el radio correcto
-          const targetRadio = form.querySelector(
-            `input[name="operationType"][value="${allowedOperationTypeFromProperty}"]`
-          ) as HTMLInputElement;
-          if (targetRadio) {
-            targetRadio.checked = true;
-            // Disparar evento change para que Preact lo detecte
-            targetRadio.dispatchEvent(new Event('change', { bubbles: true }));
-          }
-        }
-      }, 0);
     } else if (selectedPropertyId === '' && operationType) {
       // Si se deselecciona la propiedad, limpiar el operationType si estaba restringido
       // Pero solo si no hay propiedad preseleccionada
@@ -633,7 +623,8 @@ export default function AppointmentFormCRM({
         });
       }
     }
-  }, [allowedOperationTypeFromProperty, selectedPropertyId, operationType]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allowedOperationTypeFromProperty, selectedPropertyId]);
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
