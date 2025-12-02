@@ -1,10 +1,11 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import { PropertiesDashboard } from '../../features/easybroker/components/PropertiesDashboard';
+import Layout from '@/1-app-global-core/layouts/Layout.astro';
+import { PropertiesDashboard } from '@/2-app-crm/features/easybroker/components/PropertiesDashboard';
 ---
 
 <Layout>
-	<PropertiesDashboard client:load />
+	<!-- client:idle - Componente pesado: se carga cuando el navegador está idle -->
+	<PropertiesDashboard client:idle />
 </Layout>
 
 <style>

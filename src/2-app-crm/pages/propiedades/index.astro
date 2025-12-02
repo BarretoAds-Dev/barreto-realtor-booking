@@ -1,0 +1,17 @@
+---
+import Layout from '@/1-app-global-core/layouts/Layout.astro';
+import { PropertiesDashboard } from '../../features/easybroker/components/PropertiesDashboard';
+---
+
+<Layout>
+	<!-- client:idle - Componente pesado: se carga cuando el navegador está idle -->
+	<PropertiesDashboard client:idle />
+</Layout>
+
+<style>
+	/* Asegurar que el dashboard tenga el fondo correcto */
+	:global(body) {
+		background-color: #f9fafb;
+	}
+</style>
+

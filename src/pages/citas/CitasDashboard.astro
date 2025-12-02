@@ -1,6 +1,6 @@
 ---
-import Welcome from '../../features/appointments/components/Welcome.astro';
-import Layout from '../../layouts/Layout.astro';
+import Welcome from '@/2-app-crm/features/appointments/components/Welcome.astro';
+import Layout from '@/1-app-global-core/layouts/Layout.astro';
 
 // 🔧 Configuración por defecto (puede venir de Supabase en el futuro)
 const config = {
@@ -19,10 +19,10 @@ if (supabaseUrl) {
 		const endDate = new Date();
 		endDate.setMonth(endDate.getMonth() + 6);
 		const endDateStr = endDate.toISOString().split('T')[0];
-		
+
 		const baseUrl = import.meta.env.SITE || 'http://localhost:4321';
 		const response = await fetch(`${baseUrl}/api/appointments/available?start=${startDate}&end=${endDateStr}`);
-		
+
 		if (response.ok) {
 			filteredSlots = await response.json();
 		} else {
@@ -35,7 +35,7 @@ if (supabaseUrl) {
 ---
 
 <Layout>
-	<Welcome 
+	<Welcome
 		availableSlots={filteredSlots}
 		config={config}
 	/>

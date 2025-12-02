@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import { validateAppointment } from '../../../features/appointments/schemas/appointment.schema';
-import { AppointmentsService } from '../../../features/appointments/services/appointment.service';
+import { validateAppointment } from '@/2-app-crm/features/appointments/schemas/appointment.schema';
+import { AppointmentsService } from '@/1-app-global-core/core/services';
 
 export const prerender = false;
 
@@ -70,6 +70,99 @@ export const POST: APIRoute = async ({ request }) => {
 			isUpdate,
 		});
 
+		// Validar que el rango de presupuesto no sea menor al precio de la propiedad
+		if (formData.propertyId && formData.propertyId.trim() !== '') {
+			const { getSupabaseAdmin } = await import('@/1-app-global-core/core/config/supabase');
+			const client = getSupabaseAdmin();
+
+			const { data: property, error: propertyError } = await client
+				.from('properties')
+				.select('price, features')
+				.eq('id', formData.propertyId)
+				.single();
+
+			if (!propertyError && property) {
+				// Obtener precio de la propiedad (puede estar en price o en features.easybroker_public_id)
+				let propertyPrice = property.price || 0;
+
+				// Si no hay precio en Supabase, intentar obtenerlo de Easy Broker
+				if (!propertyPrice && property.features?.easybroker_public_id) {
+					try {
+						const { getEasyBrokerApiKey, getEasyBrokerBaseUrl } = await import('@/1-app-global-core/core/config/easybroker');
+						const apiKey = getEasyBrokerApiKey();
+						const baseUrl = getEasyBrokerBaseUrl();
+
+						if (apiKey && baseUrl) {
+							const ebResponse = await fetch(
+								`${baseUrl}/properties/${property.features.easybroker_public_id}`,
+								{
+									headers: { 'X-Authorization': apiKey },
+								}
+							);
+
+							if (ebResponse.ok) {
+								const ebData = await ebResponse.json();
+								propertyPrice = ebData.operations?.[0]?.amount || ebData.price?.amount || ebData.price || 0;
+							}
+						}
+					} catch (e) {
+						console.warn('⚠️ Error al obtener precio de Easy Broker:', e);
+					}
+				}
+
+				if (propertyPrice > 0) {
+					// Parsear rango de presupuesto
+					const budgetRange = formData.operationType === 'rentar'
+						? (formData as any).budgetRentar
+						: (formData as any).budgetComprar;
+
+					if (budgetRange) {
+						// Extraer valor mínimo del rango
+						let minBudget = 0;
+
+						if (budgetRange.includes('-')) {
+							// Formato: "20000-30000" o "2500000-3000000"
+							const parts = budgetRange.split('-');
+							minBudget = parseInt(parts[0], 10) || 0;
+						} else if (budgetRange.startsWith('mas-')) {
+							// Formato: "mas-150000" o "mas-10000000"
+							const value = budgetRange.replace('mas-', '');
+							minBudget = parseInt(value, 10) || 0;
+						}
+
+						// Validar que el presupuesto mínimo no sea menor al precio
+						if (minBudget > 0 && minBudget < propertyPrice) {
+							const formattedPrice = new Intl.NumberFormat('es-MX', {
+								style: 'currency',
+								currency: 'MXN',
+							}).format(propertyPrice);
+
+							const formattedBudget = new Intl.NumberFormat('es-MX', {
+								style: 'currency',
+								currency: 'MXN',
+							}).format(minBudget);
+
+							console.warn('⚠️ Presupuesto menor al precio de la propiedad:', {
+								propertyPrice,
+								minBudget,
+								budgetRange,
+							});
+
+							return new Response(
+								JSON.stringify({
+									error: 'El rango de presupuesto seleccionado es menor al precio de la propiedad',
+									details: `El precio de la propiedad es ${formattedPrice}, pero el rango seleccionado (${formattedBudget}) es menor. Por favor selecciona un rango de presupuesto adecuado.`,
+									propertyPrice,
+									selectedBudget: minBudget,
+								}),
+								{ status: 400, headers: { 'Content-Type': 'application/json' } }
+							);
+						}
+					}
+				}
+			}
+		}
+
 		// Buscar slot (sin verificar disponibilidad si es actualización)
 		console.log('🔍 Iniciando búsqueda de slot...');
 		const normalizedTime = AppointmentsService.normalizeTime(formData.time);
@@ -86,7 +179,7 @@ export const POST: APIRoute = async ({ request }) => {
 		if (isUpdate) {
 			// Para actualizaciones, solo necesitamos encontrar el slot
 			// No verificamos disponibilidad porque la cita ya está reservada
-			const { getSupabaseAdmin } = await import('../../../core/config/supabase');
+			const { getSupabaseAdmin } = await import('@/1-app-global-core/core/config/supabase');
 			const client = getSupabaseAdmin();
 			const cleanDate = formData.date.split('T')[0];
 			const defaultAgentId = '00000000-0000-0000-0000-000000000001';
@@ -142,7 +235,7 @@ export const POST: APIRoute = async ({ request }) => {
 
 		if (slotError || !slot) {
 			// Intentar buscar todos los slots disponibles para esa fecha para diagnóstico
-			const { getSupabaseAdmin } = await import('../../../core/config/supabase');
+			const { getSupabaseAdmin } = await import('@/1-app-global-core/core/config/supabase');
 			const client = getSupabaseAdmin();
 			const { data: allSlots } = await client
 				.from('availability_slots')

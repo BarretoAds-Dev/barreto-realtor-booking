@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
-import { getSupabaseAdmin } from '../../../core/config/supabase';
+import { AppointmentsService } from '@/1-app-global-core/core/services';
+import { getSupabaseAdmin } from '@/1-app-global-core/core/config/supabase';
 
 export const prerender = false;
 
@@ -20,7 +21,17 @@ export const GET: APIRoute = async ({ url }) => {
 
 		const client = getSupabaseAdmin();
 
-		// Obtener el slot
+		// ✅ Usar servicio unificado para verificar disponibilidad
+		const availability = await AppointmentsService.checkSlotAvailability(slotId);
+
+		if (availability.error) {
+			return new Response(
+				JSON.stringify({ error: 'Slot no encontrado', details: availability.error.message }),
+				{ status: 404, headers: { 'Content-Type': 'application/json' } }
+			);
+		}
+
+		// Obtener información adicional del slot
 		const { data: slot, error: slotError } = await client
 			.from('availability_slots')
 			.select('id, date, start_time, capacity, booked')
@@ -34,21 +45,13 @@ export const GET: APIRoute = async ({ url }) => {
 			);
 		}
 
-		// Obtener todas las citas del slot (incluyendo canceladas para referencia)
-		const { data: allAppointments, error: appointmentsError } = await client
+		// Obtener todas las citas del slot para referencia
+		const { data: allAppointments } = await client
 			.from('appointments')
-			.select('id, status, email, name, phone, created_at, cancelled_at')
+			.select('id, status, client_email, client_name, client_phone, created_at, cancelled_at')
 			.eq('slot_id', slotId)
 			.order('created_at', { ascending: false });
 
-		if (appointmentsError) {
-			return new Response(
-				JSON.stringify({ error: 'Error al obtener citas', details: appointmentsError.message }),
-				{ status: 500, headers: { 'Content-Type': 'application/json' } }
-			);
-		}
-
-		// Separar citas activas y canceladas
 		const activeAppointments = allAppointments?.filter(apt =>
 			apt.status === 'pending' || apt.status === 'confirmed'
 		) || [];
@@ -72,8 +75,10 @@ export const GET: APIRoute = async ({ url }) => {
 					activeCount: activeAppointments.length,
 				},
 				availability: {
-					available: activeAppointments.length < slot.capacity,
-					remaining: Math.max(0, slot.capacity - activeAppointments.length),
+					available: availability.available,
+					remaining: Math.max(0, availability.capacity - availability.bookedCount),
+					bookedCount: availability.bookedCount,
+					capacity: availability.capacity,
 				},
 			}),
 			{ status: 200, headers: { 'Content-Type': 'application/json' } }

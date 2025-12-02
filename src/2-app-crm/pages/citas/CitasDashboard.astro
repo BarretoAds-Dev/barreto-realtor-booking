@@ -1,0 +1,42 @@
+---
+import Welcome from '../../features/appointments/components/Welcome.astro';
+import Layout from '@/1-app-global-core/layouts/Layout.astro';
+
+// 🔧 Configuración por defecto (puede venir de Supabase en el futuro)
+const config = {
+	slotDuration: 45,
+	bufferTime: 5,
+	businessHours: {}
+};
+
+// 🚀 Cargar disponibilidad desde API de Supabase
+let filteredSlots: any[] = [];
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
+
+if (supabaseUrl) {
+	try {
+		const startDate = new Date().toISOString().split('T')[0];
+		const endDate = new Date();
+		endDate.setMonth(endDate.getMonth() + 6);
+		const endDateStr = endDate.toISOString().split('T')[0];
+
+		const baseUrl = import.meta.env.SITE || 'http://localhost:4321';
+		const response = await fetch(`${baseUrl}/api/appointments/available?start=${startDate}&end=${endDateStr}`);
+
+		if (response.ok) {
+			filteredSlots = await response.json();
+		} else {
+			console.warn('API de disponibilidad no disponible');
+		}
+	} catch (error) {
+		console.warn('Error al cargar desde API:', error);
+	}
+}
+---
+
+<Layout>
+	<Welcome
+		availableSlots={filteredSlots}
+		config={config}
+	/>
+</Layout>

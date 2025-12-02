@@ -1,5 +1,5 @@
 ---
-import LoginForm from '../features/auth/components/LoginForm';
+import LoginForm from '@/1-app-global-core/features/auth/components/LoginForm';
 ---
 
 <!doctype html>
@@ -12,8 +12,8 @@ import LoginForm from '../features/auth/components/LoginForm';
 		<title>Iniciar Sesión - InmoCRM</title>
 	</head>
 	<body>
-		<!-- client:visible - Balance perfecto: carga cuando es visible -->
-		<LoginForm client:visible />
+		<!-- client:load - Crítico para UX: se carga inmediatamente -->
+		<LoginForm client:load />
 	</body>
 </html>
 

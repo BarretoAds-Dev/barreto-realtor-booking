@@ -1,0 +1,10 @@
+---
+import CRMLayout from '../../layouts/crm/CRMLayout.astro';
+import CRMDashboardComponent from '../../features/crm/components/CRMDashboard';
+---
+
+<CRMLayout>
+	<!-- client:load - Dashboard necesita interactividad inmediata -->
+	<CRMDashboardComponent client:load />
+</CRMLayout>
+
