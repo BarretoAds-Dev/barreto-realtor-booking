@@ -203,6 +203,24 @@ export function PropertiesDashboard({
                     setSelectedPropertyForAppointment(prop);
                     setShowAppointmentModal(true);
                   }}
+                  onGetAppointmentLink={async (prop) => {
+                    try {
+                      const baseUrl = window.location.origin;
+                      const appointmentLink = `${baseUrl}/citas?propertyId=${prop.public_id}`;
+                      
+                      // Intentar copiar al portapapeles
+                      try {
+                        await navigator.clipboard.writeText(appointmentLink);
+                        alert('✅ Link de cita copiado al portapapeles:\n' + appointmentLink);
+                      } catch (clipboardError) {
+                        // Fallback: mostrar el link en un prompt
+                        prompt('Link de cita (copia este link):', appointmentLink);
+                      }
+                    } catch (error) {
+                      console.error('Error al generar link de cita:', error);
+                      alert('No se pudo generar el link de cita.');
+                    }
+                  }}
                   onDownloadSheet={async (prop) => {
                     try {
                       if (!prop.public_url && !prop.slug) {
