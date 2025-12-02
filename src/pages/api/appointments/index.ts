@@ -77,7 +77,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Validar que el rango de presupuesto no sea menor al precio de la propiedad
     if (formData.propertyId && formData.propertyId.trim() !== '') {
       const { getSupabaseAdmin } = await import(
-        '@/1-app-global-core/core/config/supabase'
+        '@/1-app-global-core/core/config'
       );
       const client = getSupabaseAdmin();
 
@@ -95,7 +95,7 @@ export const POST: APIRoute = async ({ request }) => {
         if (!propertyPrice && property.features?.easybroker_public_id) {
           try {
             const { getEasyBrokerApiKey, getEasyBrokerBaseUrl } = await import(
-              '@/1-app-global-core/core/config/easybroker'
+              '@/1-app-global-core/core/config'
             );
             const apiKey = getEasyBrokerApiKey();
             const baseUrl = getEasyBrokerBaseUrl();
@@ -194,7 +194,7 @@ export const POST: APIRoute = async ({ request }) => {
       // Para actualizaciones, solo necesitamos encontrar el slot
       // No verificamos disponibilidad porque la cita ya está reservada
       const { getSupabaseAdmin } = await import(
-        '@/1-app-global-core/core/config/supabase'
+        '@/1-app-global-core/core/config'
       );
       const client = getSupabaseAdmin();
       const cleanDate = formData.date.split('T')[0];
@@ -252,7 +252,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (slotError || !slot) {
       // Intentar buscar todos los slots disponibles para esa fecha para diagnóstico
       const { getSupabaseAdmin } = await import(
-        '@/1-app-global-core/core/config/supabase'
+        '@/1-app-global-core/core/config'
       );
       const client = getSupabaseAdmin();
       const { data: allSlots } = await client

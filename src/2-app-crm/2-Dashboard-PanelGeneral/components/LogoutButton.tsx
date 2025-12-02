@@ -1,7 +1,7 @@
 /** @jsxImportSource preact */
 import { useState, useEffect } from 'preact/hooks';
 import { render } from 'preact';
-import { supabaseAuth } from '@/1-app-global-core/core/config/auth';
+import { supabaseAuth } from '@/1-app-global-core/core/config';
 
 interface LogoutButtonProps {
 	showChangeUser?: boolean;
@@ -21,16 +21,16 @@ export default function LogoutButton({ showChangeUser = false, isCollapsed = fal
 		setIsLoading(true);
 		try {
 			const { error } = await supabaseAuth.auth.signOut();
-			
+
 			// Limpiar tokens del localStorage
 			localStorage.removeItem('sb-access-token');
 			localStorage.removeItem('sb-refresh-token');
-			
+
 			// Si es "Cambiar de usuario", también limpiar el email guardado
 			if (showChangeUser) {
 				localStorage.removeItem('remembered_email');
 			}
-			
+
 			if (error) {
 				console.error('Error al cerrar sesión:', error);
 				setIsLoading(false);
@@ -67,7 +67,7 @@ export default function LogoutButton({ showChangeUser = false, isCollapsed = fal
 
 		// Renderizar el modal
 		const ModalContent = () => (
-			<div 
+			<div
 				class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
 				style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh;"
 				onClick={(e) => {
@@ -92,13 +92,13 @@ export default function LogoutButton({ showChangeUser = false, isCollapsed = fal
 								</div>
 							</div>
 						</div>
-						
+
 						{/* Content */}
 						<div class="px-6 py-5">
 							<p class="text-sm text-gray-600 mb-6">
 								¿Estás seguro de que deseas cerrar sesión? Tendrás que iniciar sesión nuevamente para acceder al sistema.
 							</p>
-							
+
 							{/* Buttons */}
 							<div class="flex gap-3 justify-end">
 								<button

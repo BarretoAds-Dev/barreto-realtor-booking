@@ -1,6 +1,6 @@
 /** @jsxImportSource preact */
 import { useState, useEffect, useMemo } from 'preact/hooks';
-import { supabaseAuth } from '@/1-app-global-core/core/config/auth';
+import { supabaseAuth } from '@/1-app-global-core/core/config';
 import { Button } from '@/1-app-global-core/shared/ui';
 
 interface DashboardPanelProps {

@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { supabase } from '@/1-app-global-core/core/config/supabase';
+import { supabase } from '@/1-app-global-core/core/config';
 import type { Appointment } from '@/1-app-global-core/core/types/appointment';
-import { getEasyBrokerApiKey, getEasyBrokerBaseUrl } from '@/1-app-global-core/core/config/easybroker';
+import { getEasyBrokerApiKey, getEasyBrokerBaseUrl } from '@/1-app-global-core/core/config';
 
 export const prerender = false; // Server-rendered
 

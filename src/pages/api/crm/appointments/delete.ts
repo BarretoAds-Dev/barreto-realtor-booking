@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { supabase } from '@/1-app-global-core/core/config/supabase';
+import { supabase } from '@/1-app-global-core/core/config';
 
 export const prerender = false;
 
@@ -50,9 +50,9 @@ export const POST: APIRoute = async ({ request }) => {
 			const errorCode = deleteError.code || 'UNKNOWN';
 			const errorDetails = deleteError.details || '';
 			const errorHint = deleteError.hint || '';
-			
+
 			return new Response(
-				JSON.stringify({ 
+				JSON.stringify({
 					error: 'Error al eliminar la cita',
 					message: errorMessage,
 					code: errorCode,
@@ -97,7 +97,7 @@ export const POST: APIRoute = async ({ request }) => {
 		}
 
 		return new Response(
-			JSON.stringify({ 
+			JSON.stringify({
 				success: true,
 				message: 'Cita eliminada exitosamente'
 			}),
@@ -106,7 +106,7 @@ export const POST: APIRoute = async ({ request }) => {
 	} catch (error) {
 		console.error('Error en delete:', error);
 		return new Response(
-			JSON.stringify({ 
+			JSON.stringify({
 				error: 'Error interno del servidor',
 				message: error instanceof Error ? error.message : 'Unknown error'
 			}),

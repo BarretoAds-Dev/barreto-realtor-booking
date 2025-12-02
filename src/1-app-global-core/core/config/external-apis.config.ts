@@ -1,12 +1,22 @@
 /**
- * Configuración de Easy Broker API
+ * Configuración de APIs Externas
+ *
+ * Centraliza la configuración de todas las APIs externas del sistema:
+ * - EasyBroker API
+ * - Futuras APIs (Google Maps, Stripe, etc.)
+ *
  * Edge-compatible: Usa import.meta.env para variables de entorno
  */
+
+// ============================================================================
+// EasyBroker API Configuration
+// ============================================================================
 
 // Intentar ambas variantes: con y sin PUBLIC_ prefix
 const EASYBROKER_API_KEY =
 	import.meta.env.EASYBROKER_API_KEY ||
 	import.meta.env.PUBLIC_EASYBROKER_API_KEY;
+
 const EASYBROKER_API_BASE_URL = 'https://api.easybroker.com/v1';
 
 // Slug de la agencia (puede venir de env o configurarse manualmente)
@@ -22,6 +32,9 @@ if (!EASYBROKER_API_KEY) {
 	);
 }
 
+/**
+ * Configuración completa de EasyBroker
+ */
 export const easybrokerConfig = {
 	apiKey: EASYBROKER_API_KEY || '',
 	baseUrl: EASYBROKER_API_BASE_URL,
@@ -35,6 +48,8 @@ export const easybrokerConfig = {
 
 /**
  * Valida que la configuración de Easy Broker esté completa
+ *
+ * @returns true si la configuración es válida, false en caso contrario
  */
 export function validateEasyBrokerConfig(): boolean {
 	if (!EASYBROKER_API_KEY) {
@@ -45,6 +60,8 @@ export function validateEasyBrokerConfig(): boolean {
 
 /**
  * Obtiene la API key de Easy Broker
+ *
+ * @returns API key o null si no está configurada
  */
 export function getEasyBrokerApiKey(): string | null {
 	return EASYBROKER_API_KEY || null;
@@ -52,8 +69,29 @@ export function getEasyBrokerApiKey(): string | null {
 
 /**
  * Obtiene la URL base de Easy Broker
+ *
+ * @returns URL base de la API
  */
 export function getEasyBrokerBaseUrl(): string {
 	return EASYBROKER_API_BASE_URL;
 }
+
+// ============================================================================
+// Future External APIs
+// ============================================================================
+
+/**
+ * Placeholder para futuras configuraciones de APIs externas
+ * Ejemplos: Google Maps, Stripe, SendGrid, etc.
+ */
+
+// export const googleMapsConfig = {
+//   apiKey: import.meta.env.PUBLIC_GOOGLE_MAPS_API_KEY || '',
+//   // ...
+// } as const;
+
+// export const stripeConfig = {
+//   publishableKey: import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
+//   // ...
+// } as const;
 

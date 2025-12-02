@@ -1,5 +1,5 @@
 /** @jsxImportSource preact */
-import { easybrokerConfig } from '@/1-app-global-core/core/config/easybroker';
+import { easybrokerConfig } from '@/1-app-global-core/core/config';
 import type { EasyBrokerProperty } from '@/1-app-global-core/core/types/easybroker';
 import { getEasyBrokerPropertyUrl } from '@/1-app-global-core/core/utils/easybroker-url';
 import type { JSX } from 'preact';

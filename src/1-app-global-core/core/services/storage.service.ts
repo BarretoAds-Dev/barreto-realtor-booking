@@ -1,4 +1,4 @@
-import { supabaseAuth } from '../config/auth';
+import { supabaseAuth } from '../config';
 
 const AVATAR_BUCKET = 'avatars';
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB

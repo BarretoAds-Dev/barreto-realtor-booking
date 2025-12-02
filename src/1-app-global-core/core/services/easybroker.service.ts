@@ -1,4 +1,4 @@
-import { easybrokerConfig, validateEasyBrokerConfig } from '../config/easybroker';
+import { easybrokerConfig, validateEasyBrokerConfig } from '../config';
 import type {
 	EasyBrokerProperty,
 	EasyBrokerPropertiesResponse,

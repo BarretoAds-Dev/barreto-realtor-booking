@@ -8,7 +8,7 @@ import {
 	MODALIDADES_INFONAVIT,
 	MODALIDADES_FOVISSSTE,
 	OPERATION_TYPES,
-} from '@/1-app-global-core/core/config/constants';
+} from '@/1-app-global-core/core/config';
 
 interface AppointmentFormFieldsProps {
 	operationType: 'rentar' | 'comprar' | '';

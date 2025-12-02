@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import {
   BUDGET_OPTIONS_COMPRAR,
   BUDGET_OPTIONS_RENTAR,
-} from '@/1-app-global-core/core/config/constants';
+} from '@/1-app-global-core/core/config';
 import AppointmentFormFields from '@/1-app-global-core/shared/components/AppointmentFormFields';
 import { useAppointmentForm } from '@/1-app-global-core/shared/hooks/useAppointmentForm';
 import { Button, ErrorMessage, FormField, Input } from '@/1-app-global-core/shared/ui';

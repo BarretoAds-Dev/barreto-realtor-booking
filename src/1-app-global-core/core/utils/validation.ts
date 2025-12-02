@@ -1,5 +1,5 @@
 // Validación compartida (sin Zod, para uso en cliente)
-import { VALIDATION_RULES, VALIDATION_MESSAGES } from '../config/validation-rules';
+import { VALIDATION_RULES, VALIDATION_MESSAGES } from '../config';
 
 export interface ValidationResult {
 	success: boolean;

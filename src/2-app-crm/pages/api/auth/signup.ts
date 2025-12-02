@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { getSupabaseAdmin } from '@/1-app-global-core/core/config/supabase';
+import { getSupabaseAdmin } from '@/1-app-global-core/core/config';
 import { validatePassword } from '@/1-app-global-core/core/services/hibp.service';
 
 export const prerender = false;

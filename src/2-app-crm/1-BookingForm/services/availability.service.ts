@@ -1,4 +1,4 @@
-import { supabase } from '@/1-app-global-core/core/config/supabase';
+import { supabase } from '@/1-app-global-core/core/config';
 import type { AvailabilitySlot } from '@/1-app-global-core/core/types';
 
 /**
@@ -84,10 +84,10 @@ export class AvailabilityService {
 							},
 						};
 					}
-					
+
 					const isAvailable = slot.booked < slot.capacity;
 					const isEnabled = slot.enabled ?? true;
-					
+
 					acc[dateKey].slots.push({
 						time: slot.start_time,
 						available: isAvailable && isEnabled,
@@ -95,7 +95,7 @@ export class AvailabilityService {
 						booked: slot.booked,
 						enabled: isEnabled,
 					});
-					
+
 					return acc;
 				},
 				{} as Record<

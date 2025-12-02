@@ -1,12 +1,12 @@
 import type { APIRoute } from 'astro';
-import { supabaseAuth } from '@/1-app-global-core/core/config/auth';
+import { supabaseAuth } from '@/1-app-global-core/core/config';
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ request }) => {
 	try {
 		const authHeader = request.headers.get('Authorization');
-		
+
 		if (!authHeader) {
 			return new Response(
 				JSON.stringify({

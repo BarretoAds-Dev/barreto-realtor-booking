@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from '@/1-app-global-core/core/config/supabase';
+import { getSupabaseAdmin } from '@/1-app-global-core/core/config';
 import type { AvailabilitySlot } from '@/1-app-global-core/core/types';
 import type { AppointmentFormData } from '../schemas/appointment.schema';
 
