@@ -17,7 +17,7 @@
  */
 
 import type { AppointmentFormData } from '@/2-app-crm/1-BookingForm/schemas/appointment.schema';
-import { getSupabaseAdmin, supabase } from '../1-config';
+import { getSupabaseAdmin, supabase } from '../config';
 import type { AvailabilitySlot } from '../types';
 
 // ============================================================================

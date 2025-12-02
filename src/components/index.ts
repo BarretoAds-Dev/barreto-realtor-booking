@@ -5,7 +5,7 @@
  *
  * @example
  * ```ts
- * import { Button, Input, FormField } from '@/3-components';
+ * import { Button, Input, FormField } from '@/components';
  * ```
  */
 

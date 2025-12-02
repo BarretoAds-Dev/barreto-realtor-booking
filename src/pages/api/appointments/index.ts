@@ -1,4 +1,4 @@
-import { AppointmentsService } from '@/1-app-global-core/2-services';
+import { AppointmentsService } from '@/1-app-global-core/services';
 import { validateAppointment } from '@/2-app-crm/1-BookingForm/schemas/appointment.schema';
 import type { APIRoute } from 'astro';
 
@@ -76,7 +76,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Validar que el rango de presupuesto no sea menor al precio de la propiedad
     if (formData.propertyId && formData.propertyId.trim() !== '') {
-      const { getSupabaseAdmin } = await import('@/1-app-global-core/1-config');
+      const { getSupabaseAdmin } = await import('@/1-app-global-core/config');
       const client = getSupabaseAdmin();
 
       const { data: property, error: propertyError } = await client
@@ -93,7 +93,7 @@ export const POST: APIRoute = async ({ request }) => {
         if (!propertyPrice && property.features?.easybroker_public_id) {
           try {
             const { getEasyBrokerApiKey, getEasyBrokerBaseUrl } = await import(
-              '@/1-app-global-core/1-config'
+              '@/1-app-global-core/config'
             );
             const apiKey = getEasyBrokerApiKey();
             const baseUrl = getEasyBrokerBaseUrl();
@@ -191,7 +191,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (isUpdate) {
       // Para actualizaciones, solo necesitamos encontrar el slot
       // No verificamos disponibilidad porque la cita ya está reservada
-      const { getSupabaseAdmin } = await import('@/1-app-global-core/1-config');
+      const { getSupabaseAdmin } = await import('@/1-app-global-core/config');
       const client = getSupabaseAdmin();
       const cleanDate = formData.date.split('T')[0];
       const defaultAgentId = '00000000-0000-0000-0000-000000000001';
@@ -247,7 +247,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (slotError || !slot) {
       // Intentar buscar todos los slots disponibles para esa fecha para diagnóstico
-      const { getSupabaseAdmin } = await import('@/1-app-global-core/1-config');
+      const { getSupabaseAdmin } = await import('@/1-app-global-core/config');
       const client = getSupabaseAdmin();
       const { data: allSlots } = await client
         .from('availability_slots')

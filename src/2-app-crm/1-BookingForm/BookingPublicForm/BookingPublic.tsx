@@ -3,7 +3,7 @@ import type {
   AppointmentConfig,
   AppointmentStep,
   AvailableSlot,
-} from '@/1-app-global-core/4-types/appointment';
+} from '@/1-app-global-core/types/appointment';
 import AppointmentFormCRM from '@/2-app-crm/4-Dashboard-CitasyClientes/components/AppointmentFormCRM';
 import CalendarCRM from '@/2-app-crm/4-Dashboard-CitasyClientes/components/CalendarCRM';
 import TimeSlotsCRM from '@/2-app-crm/4-Dashboard-CitasyClientes/components/TimeSlotsCRM';

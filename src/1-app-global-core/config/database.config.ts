@@ -8,7 +8,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '../4-types/database';
+import type { Database } from '../types/database';
 
 // ============================================================================
 // Variables de Entorno

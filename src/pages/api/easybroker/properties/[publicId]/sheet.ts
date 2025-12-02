@@ -1,5 +1,5 @@
-import { validateEasyBrokerConfig } from '@/1-app-global-core/1-config';
-import { EasyBrokerServiceAPI } from '@/1-app-global-core/2-services/easybroker.service';
+import { validateEasyBrokerConfig } from '@/1-app-global-core/config';
+import { EasyBrokerServiceAPI } from '@/1-app-global-core/services/easybroker.service';
 import type { APIRoute } from 'astro';
 
 export const prerender = false;

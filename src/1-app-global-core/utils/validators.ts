@@ -10,7 +10,7 @@
  * ```
  */
 
-import { VALIDATION_MESSAGES, VALIDATION_RULES } from '../1-config';
+import { VALIDATION_MESSAGES, VALIDATION_RULES } from '../config';
 
 // ============================================================================
 // Types

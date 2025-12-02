@@ -1,5 +1,5 @@
 /** @jsxImportSource preact */
-import { validateAppointmentClient } from '@/1-app-global-core/5-utils';
+import { validateAppointmentClient } from '@/1-app-global-core/utils';
 import { useEffect, useMemo, useState } from 'preact/hooks';
 
 type AppointmentFormData = any;

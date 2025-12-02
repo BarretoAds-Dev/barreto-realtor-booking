@@ -1,4 +1,4 @@
-import { supabaseAuth } from '@/1-app-global-core/1-config';
+import { supabaseAuth } from '@/1-app-global-core/config';
 import type { APIRoute } from 'astro';
 
 export const prerender = false;

@@ -16,7 +16,7 @@
  * ```
  */
 
-import { supabaseAuth } from '../1-config';
+import { supabaseAuth } from '../config';
 
 // ============================================================================
 // Password Validation (HIBP)

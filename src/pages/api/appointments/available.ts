@@ -1,4 +1,4 @@
-import { AvailabilityService } from '@/1-app-global-core/2-services';
+import { AvailabilityService } from '@/1-app-global-core/services';
 import type { APIRoute } from 'astro';
 
 export const GET: APIRoute = async ({ url }) => {

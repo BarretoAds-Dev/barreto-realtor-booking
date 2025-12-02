@@ -1,7 +1,7 @@
 /** @jsxImportSource preact */
-import { supabaseAuth } from '@/1-app-global-core/1-config';
-import { deleteAvatar, uploadAvatar } from '@/1-app-global-core/2-services';
-import { Button } from '@/3-components';
+import { supabaseAuth } from '@/1-app-global-core/config';
+import { deleteAvatar, uploadAvatar } from '@/1-app-global-core/services';
+import { Button } from '@/components';
 import { useEffect, useRef, useState } from 'preact/hooks';
 
 interface AdminSettingsProps {

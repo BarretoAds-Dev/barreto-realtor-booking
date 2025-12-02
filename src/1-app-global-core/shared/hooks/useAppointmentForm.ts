@@ -1,4 +1,4 @@
-import { validateAppointmentClient } from '@/1-app-global-core/5-utils';
+import { validateAppointmentClient } from '@/1-app-global-core/utils';
 import { useState } from 'preact/hooks';
 
 interface UseAppointmentFormProps {

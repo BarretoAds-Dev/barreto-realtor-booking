@@ -1,5 +1,5 @@
-import { getSupabaseAdmin } from '@/1-app-global-core/1-config';
-import type { Database } from '@/1-app-global-core/4-types/database';
+import { getSupabaseAdmin } from '@/1-app-global-core/config';
+import type { Database } from '@/1-app-global-core/types/database';
 import type { APIRoute } from 'astro';
 
 type PropertyInsert = Database['public']['Tables']['properties']['Insert'];

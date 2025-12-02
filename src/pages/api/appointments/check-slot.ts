@@ -1,5 +1,5 @@
-import { getSupabaseAdmin } from '@/1-app-global-core/1-config';
-import { AppointmentsService } from '@/1-app-global-core/2-services';
+import { getSupabaseAdmin } from '@/1-app-global-core/config';
+import { AppointmentsService } from '@/1-app-global-core/services';
 import type { APIRoute } from 'astro';
 
 export const prerender = false;

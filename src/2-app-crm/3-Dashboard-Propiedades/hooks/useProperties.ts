@@ -1,7 +1,7 @@
 import type {
   EasyBrokerProperty,
   EasyBrokerSearchFilters,
-} from '@/1-app-global-core/4-types/easybroker';
+} from '@/1-app-global-core/types/easybroker';
 import { computed, signal } from '@preact/signals';
 
 /**

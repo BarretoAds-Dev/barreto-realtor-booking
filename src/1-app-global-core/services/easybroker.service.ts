@@ -1,14 +1,14 @@
-import { easybrokerConfig, validateEasyBrokerConfig } from '../1-config';
+import { easybrokerConfig, validateEasyBrokerConfig } from '../config';
 import type {
   EasyBrokerPropertiesResponse,
   EasyBrokerProperty,
   EasyBrokerSearchFilters,
   EasyBrokerServiceResult,
-} from '../4-types/easybroker';
+} from '../types/easybroker';
 import {
   EasyBrokerPropertiesResponseSchema,
   EasyBrokerPropertyResponseSchema,
-} from '../4-types/easybroker';
+} from '../types/easybroker';
 
 /**
  * Servicio para interactuar con Easy Broker API

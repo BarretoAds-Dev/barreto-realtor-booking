@@ -1,5 +1,5 @@
 /** @jsxImportSource preact */
-import { supabaseAuth } from '@/1-app-global-core/1-config';
+import { supabaseAuth } from '@/1-app-global-core/config';
 import { render } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 

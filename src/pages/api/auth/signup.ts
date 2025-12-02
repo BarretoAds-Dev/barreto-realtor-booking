@@ -1,4 +1,4 @@
-import { validatePassword } from '@/1-app-global-core/2-services';
+import { validatePassword } from '@/1-app-global-core/services';
 import type { APIRoute } from 'astro';
 
 export const prerender = false;
